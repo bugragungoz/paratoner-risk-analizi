@@ -1,0 +1,10 @@
+# Satır sonları depoda ve çalışma kopyasında LF olarak sabit
+* text=auto eol=lf
+
+# İkili dosyalar
+*.png binary
+*.jpg binary
+*.ico binary
+*.icns binary
+*.docx binary
+*.msi binary

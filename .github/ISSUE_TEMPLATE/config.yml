@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Güvenlik açığı
+    url: https://github.com/bugragungoz/paratoner-risk-analizi/security/advisories/new
+    about: Güvenlik açıklarını herkese açık sorun olarak değil, özel bildirimle iletin.

@@ -1,0 +1,370 @@
+/* Bugra tasarım sistemi: tokenlar ve temel bileşenler.
+ *
+ * Kaynak: Bugra Design System (claude.ai, sürüm 3) — tokens.json ve components/bundle.css.
+ * Değerler oradan birebir alınmıştır; uygulamaya özel eklemeler "(eklendi)" diye işaretlidir.
+ * Renk değerini bu dosya dışında yazmayın, tokenları kullanın.
+ */
+
+/* ------------------------------------------------------------------ Tokenlar: koyu (varsayılan) */
+:root,
+:root[data-tema="dark"] {
+  color-scheme: dark;
+  --bg: #131110;
+  --surface: #1b1917;
+  --surface-2: #24211e;
+  --ink: #f4f1ec;
+  --muted: #a29b91;
+  --line: rgba(244, 241, 236, 0.09);
+  --line-strong: rgba(244, 241, 236, 0.18);
+  --border-control: #857e74;
+  --accent: #3ddc84;
+  --accent-hover: #6ff0a8;
+  --accent-quiet: rgba(61, 220, 132, 0.13);
+  --accent-ink: #3ddc84;
+  --on-accent: #131110;
+  --code-bg: #0c0b0a;
+  --code-muted: #8d867c;
+  --ok: #7fc98a;
+  --warn: #e8705a;
+  --info: #8ab8e8;
+  /* (eklendi) Hesabı durdurmayan uyarılar için; hata = warn. 4,5:1 üzeri. */
+  --caution: #e3b341;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --disabled-ink: rgba(244, 241, 236, 0.38);
+  --disabled-fill: rgba(244, 241, 236, 0.12);
+  --selection: rgba(61, 220, 132, 0.32);
+  --focus-ring: var(--accent);
+  --shadow-menu: 0 18px 44px rgba(0, 0, 0, 0.55);
+  --shadow-dialog: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------------------ Tokenlar: açık (türetilmiş) */
+:root[data-tema="light"] {
+  color-scheme: light;
+  --bg: #f6f3ee;
+  --surface: #ffffff;
+  --surface-2: #ebe7e0;
+  --ink: #131110;
+  --muted: #5f5850;
+  --line: rgba(19, 17, 16, 0.1);
+  --line-strong: rgba(19, 17, 16, 0.2);
+  --border-control: #7a7369;
+  --accent: #3ddc84;
+  --accent-hover: #2fc274;
+  --accent-quiet: rgba(8, 107, 55, 0.12);
+  --accent-ink: #086b37;
+  --on-accent: #131110;
+  --code-bg: #efebe4;
+  --code-muted: #6b645b;
+  --ok: #1a6e33;
+  --warn: #a63a25;
+  --info: #1a5a94;
+  --caution: #8a5a00;
+  --scrim: rgba(19, 17, 16, 0.4);
+  --disabled-ink: rgba(19, 17, 16, 0.38);
+  --disabled-fill: rgba(19, 17, 16, 0.12);
+  --selection: rgba(8, 107, 55, 0.22);
+  --focus-ring: var(--accent-ink);
+  --shadow-menu: 0 18px 44px rgba(19, 17, 16, 0.16);
+  --shadow-dialog: 0 24px 64px rgba(19, 17, 16, 0.2);
+}
+
+/* ------------------------------------------------------------------ Tokenlar: temadan bağımsız */
+:root {
+  --font-ui: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Bugra'nın "radius" (14px) tokenı burada --radius-box adını taşır: --radius bu uygulamada
+     alanların köşesidir (= radius-sm). */
+  --radius-2xs: 4px;
+  --radius-xs: 7px;
+  --radius-sm: 10px;
+  --radius: 10px;
+  --radius-box: 14px;
+  --pill: 999px;
+
+  --target-min: 48px;
+  --control-sm: 34px;
+  --switch-w: 44px;
+  --switch-h: 26px;
+
+  --state-hover: 0.08;
+  --state-pressed: 0.1;
+
+  --dur-instant: 100ms;
+  --dur-hover: 200ms;
+  --dur-close: 250ms;
+  --dur-medium: 300ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+}
+
+/* ------------------------------------------------------------------ Temel */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--selection); }
+
+button, select, input, textarea { font: inherit; font-size: 13px; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+
+code, kbd, .mono { font-family: var(--font-mono); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* ------------------------------------------------------------------ Düğme (Button) */
+/* Varsayılan: hap biçimli çerçeve düğme. Birincil (yeşil dolgu) bir görünümde en fazla bir kez. */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--control-sm);
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--pill);
+  background: transparent;
+  color: var(--ink);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-out), border-color var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out);
+}
+button svg { flex-shrink: 0; }
+button:hover { background: var(--surface-2); border-color: var(--ink); }
+button:active { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+button:disabled,
+button:disabled:hover { background: var(--disabled-fill); border-color: transparent; color: var(--disabled-ink); cursor: not-allowed; }
+
+button.buton-birincil { background: var(--accent); border-color: var(--accent-ink); color: var(--on-accent); }
+button.buton-birincil:hover { background: var(--accent-hover); border-color: var(--accent-ink); }
+button.buton-birincil:disabled { background: var(--disabled-fill); border-color: transparent; color: var(--disabled-ink); }
+
+/* Sessiz düğme: çerçevesiz, ikincil işler için. */
+button.ikincil-buton { border-color: transparent; color: var(--muted); }
+button.ikincil-buton:hover { background: var(--surface-2); border-color: transparent; color: var(--ink); }
+
+/* Geri alınamaz işlem: Bugra'da ayrı stil yok; çerçeve düğme + warn metin ve sözcükle. */
+button.ui-buton-tehlike { border-color: var(--warn); color: var(--warn); }
+button.ui-buton-tehlike:hover { background: color-mix(in srgb, var(--warn) 12%, transparent); border-color: var(--warn); }
+button.ui-buton-tehlike:disabled,
+button.ui-buton-tehlike:disabled:hover { background: var(--disabled-fill); border-color: transparent; color: var(--disabled-ink); }
+
+/* Seçili seçenek (Chip seçili hali): accent-quiet dolgu + accent-ink çerçeve ve metin. */
+button.mod-aktif,
+button.secim-karti.secili { background: var(--accent-quiet); border-color: var(--accent-ink); color: var(--accent-ink); }
+button.mod-aktif:hover { background: var(--accent-quiet); border-color: var(--accent-ink); }
+
+/* Küçük düğme (satır içi). */
+button.mini-buton { min-height: 26px; padding: 0 10px; font-size: 12px; }
+button.mini-buton-tehlike:hover { border-color: var(--warn); color: var(--warn); background: transparent; }
+
+/* ------------------------------------------------------------------ Simge düğmesi (IconButton) */
+button.ikon-buton {
+  width: 30px;
+  min-height: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--pill);
+  background: transparent;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+button.ikon-buton:hover { background: var(--surface-2); color: var(--ink); }
+button.ikon-buton-tehlike:hover { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+button.ikon-buton.kapali { color: var(--warn); }
+button.ikon-kare { width: var(--control-sm); padding: 0; }
+
+/* ------------------------------------------------------------------ Metin alanı (TextField) */
+/* :where() özgüllüğü sıfırlar; uygulamadaki özel alanlar bu temeli kolayca ezebilir. */
+input:where(:not([type="checkbox"], [type="radio"], [type="range"])),
+select,
+textarea {
+  min-height: var(--control-sm);
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--dur-hover) var(--ease-out);
+}
+textarea { padding: 8px 12px; resize: vertical; line-height: 1.5; }
+select { padding-right: 8px; }
+input:hover, select:hover, textarea:hover { border-color: var(--ink); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-color: var(--ink); }
+input:disabled, select:disabled, textarea:disabled { background: var(--disabled-fill); border-color: transparent; color: var(--disabled-ink); }
+input::placeholder, textarea::placeholder { color: var(--muted); }
+select option { background: var(--surface); color: var(--ink); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+/* Eksik / hatalı girdi: kenar rengi + yanındaki sözcük. */
+input.girdi-eksik, select.girdi-eksik { border-color: var(--caution); }
+input.girdi-hatali, select.girdi-hatali { border-color: var(--warn) !important; }
+
+/* ------------------------------------------------------------------ Anahtar (Switch) */
+.ui-switch-satir { display: flex; align-items: center; gap: 12px; min-height: var(--control-sm); cursor: pointer; user-select: none; }
+.ui-switch-etiket { font-size: 13px; color: var(--ink); }
+.ui-switch-root {
+  all: unset;
+  position: relative;
+  width: var(--switch-w);
+  height: var(--switch-h);
+  box-sizing: border-box;
+  border: 1.6px solid var(--border-control);
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-out), border-color var(--dur-hover) var(--ease-out);
+}
+.ui-switch-root:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.ui-switch-thumb {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: left var(--dur-hover) var(--ease-out), background var(--dur-hover) var(--ease-out);
+}
+.ui-switch-root[data-state="checked"] { background: var(--accent); border-color: var(--accent-ink); }
+.ui-switch-root[data-state="checked"] .ui-switch-thumb { left: 21px; background: var(--on-accent); }
+.ui-switch-root[disabled] { background: var(--disabled-fill); border-color: transparent; cursor: not-allowed; }
+.ui-switch-root[disabled] + .ui-switch-etiket { color: var(--disabled-ink); }
+
+/* ------------------------------------------------------------------ Diyalog (Dialog) */
+.ui-alertdialog-overlay,
+.pencere-arkaplan {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: bugra-belir var(--dur-medium) var(--ease-enter);
+}
+.ui-alertdialog-overlay { z-index: 10000; }
+.pencere-arkaplan { z-index: 2000; }
+.pencere-arkaplan.saydam { background: color-mix(in srgb, var(--scrim) 35%, transparent); }
+
+.ui-alertdialog-content,
+.pencere {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-box);
+  box-shadow: var(--shadow-dialog);
+  animation: bugra-diyalog var(--dur-medium) var(--ease-enter);
+}
+.ui-alertdialog-content { z-index: 10001; width: min(420px, calc(100vw - 32px)); padding: var(--space-6); }
+.ui-alertdialog-title { margin: 0 0 var(--space-3); font-size: 17px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.ui-alertdialog-description { margin: 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.ui-alertdialog-butonlar { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
+
+/* ------------------------------------------------------------------ Menü ve açılır kart */
+.dosya-menusu,
+.sag-tik-menu,
+.arama-sonuclar,
+.ui-hovercard-icerik {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-menu);
+}
+.dosya-menusu,
+.sag-tik-menu { padding: 6px; min-width: 240px; }
+.dosya-menusu button,
+.sag-tik-menu button {
+  width: 100%;
+  min-height: 36px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  color: var(--muted);
+  text-align: left;
+}
+.dosya-menusu button:hover,
+.sag-tik-menu button:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+.sag-tik-menu button:disabled { background: transparent; }
+.sag-tik-menu button.tehlike { color: var(--warn); }
+.dosya-menusu kbd,
+.sag-tik-menu kbd { font-size: 11px; color: var(--code-muted); }
+.dosya-menusu hr,
+.sag-tik-menu hr { border: none; border-top: 1px solid var(--line); margin: 6px 4px; }
+
+/* ------------------------------------------------------------------ Bildirim (Snackbar) */
+.bildirim-kap { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 12000; display: flex; flex-direction: column; gap: var(--space-2); align-items: center; pointer-events: none; }
+.bildirim {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  max-width: min(560px, 90vw);
+  padding: 10px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-menu);
+  font-size: 13px;
+  color: var(--ink);
+  word-break: break-word;
+  animation: bugra-bildirim var(--dur-medium) var(--ease-enter);
+}
+/* Durum rengi küçük bir nokta; anlamı metin taşır. */
+.bildirim::before { content: ""; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--info); }
+.bildirim-basari::before { background: var(--ok); }
+.bildirim-hata::before { background: var(--warn); }
+
+/* ------------------------------------------------------------------ Not (Note) */
+.panel-uyari,
+.bilgi-kutusu,
+.acilis-uyarilari li {
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--caution);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ Hareket */
+@keyframes bugra-belir { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bugra-diyalog { from { opacity: 0; transform: translate(-50%, -48%) scale(0.98); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes bugra-bildirim { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bugra-kart { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bugra-don { to { transform: rotate(360deg); } }

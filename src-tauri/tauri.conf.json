@@ -1,0 +1,59 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Paratoner Risk Analizi",
+  "version": "../package.json",
+  "identifier": "com.bugragungoz.paratoner",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Paratoner Risk Analizi",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 720,
+        "resizable": true,
+        "fullscreen": false,
+        "theme": "Dark",
+        "backgroundColor": "#131110",
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://karo.localhost; connect-src 'self' ipc: http://ipc.localhost; frame-src https://www.google.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'",
+      "devCsp": null,
+      "dangerousDisableAssetCspModification": [
+        "style-src"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "publisher": "Bugra Gungoz",
+    "fileAssociations": [
+      {
+        "ext": ["ptproj"],
+        "name": "Paratoner projesi",
+        "description": "Paratoner Risk Analizi proje dosyası",
+        "role": "Editor",
+        "mimeType": "application/x-paratoner-proje"
+      }
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

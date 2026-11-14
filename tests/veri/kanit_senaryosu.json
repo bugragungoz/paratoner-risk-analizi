@@ -1,0 +1,167 @@
+{
+  "id": "proj_kanit",
+  "isim": "Kanit Senaryosu",
+  "olusturma_tarihi": "2026-10-24T00:00:00.000Z",
+  "harita_merkez_lat": 39.9,
+  "harita_merkez_lng": 32.8,
+  "harita_zoom": 17,
+  "Nk": 30,
+  "deltaT": 60,
+  "h_esikleri_varsayilan": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "parsel_siniri": [
+    {
+      "lat": 39.89964067553,
+      "lng": 32.79964871533612
+    },
+    {
+      "lat": 39.89964067553,
+      "lng": 32.80515217507026
+    },
+    {
+      "lat": 39.900538986704994,
+      "lng": 32.80515217507026
+    },
+    {
+      "lat": 39.900538986704994,
+      "lng": 32.79964871533612
+    }
+  ],
+  "kot_seviyeleri": [
+    {
+      "id": "kot_0",
+      "isim": "Zemin",
+      "taban_kottan_yukseklik_m": 0,
+      "aciklama": ""
+    }
+  ],
+  "yapilar": [
+    {
+      "id": "yp_depo",
+      "isim": "Depo-B",
+      "tip": "depo",
+      "poligon": [
+        {
+          "lat": 39.9,
+          "lng": 32.8
+        },
+        {
+          "lat": 39.9,
+          "lng": 32.801756423319404
+        },
+        {
+          "lat": 39.900179662235,
+          "lng": 32.801756423319404
+        },
+        {
+          "lat": 39.900179662235,
+          "lng": 32.8
+        }
+      ],
+      "kot_seviyesi_id": "kot_0",
+      "H_m": 6,
+      "L_m": 150,
+      "W_m": 20,
+      "manuelBoyut": false,
+      "C1": 1,
+      "C2": 1,
+      "C3": 1,
+      "C4": 1,
+      "C5": 1,
+      "kritik_mi": false,
+      "gorunur_mu": true
+    },
+    {
+      "id": "yp_silo",
+      "isim": "Silo-A",
+      "tip": "silo",
+      "poligon": [
+        {
+          "lat": 39.9,
+          "lng": 32.80468379551842
+        },
+        {
+          "lat": 39.9,
+          "lng": 32.80480089040638
+        },
+        {
+          "lat": 39.9000898311175,
+          "lng": 32.80480089040638
+        },
+        {
+          "lat": 39.9000898311175,
+          "lng": 32.80468379551842
+        }
+      ],
+      "kot_seviyesi_id": "kot_0",
+      "H_m": 10,
+      "L_m": 10,
+      "W_m": 10,
+      "manuelBoyut": false,
+      "C1": 1,
+      "C2": 1,
+      "C3": 1,
+      "C4": 1,
+      "C5": 1,
+      "kritik_mi": false,
+      "gorunur_mu": true
+    }
+  ],
+  "paratonerler": [
+    {
+      "id": "pr_1",
+      "isim": "P1",
+      "lat": 39.9000898311175,
+      "lng": 32.79994145255602,
+      "kot_seviyesi_id": "kot_0",
+      "yapi_id": null,
+      "mast_yuksekligi_m": 11,
+      "aktif_mi": true,
+      "h_esikleri": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "gorunur_mu": true
+    },
+    {
+      "id": "pr_2",
+      "isim": "P2",
+      "lat": 39.9000898311175,
+      "lng": 32.80181497076339,
+      "kot_seviyesi_id": "kot_0",
+      "yapi_id": null,
+      "mast_yuksekligi_m": 11,
+      "aktif_mi": true,
+      "h_esikleri": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "gorunur_mu": true
+    },
+    {
+      "id": "pr_3",
+      "isim": "P3",
+      "lat": 39.900044915558745,
+      "lng": 32.80456670063046,
+      "kot_seviyesi_id": "kot_0",
+      "yapi_id": null,
+      "mast_yuksekligi_m": 11.5,
+      "aktif_mi": true,
+      "h_esikleri": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "gorunur_mu": true
+    }
+  ]
+}

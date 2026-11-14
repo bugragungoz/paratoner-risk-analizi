@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+
+src-tauri/target/
+src-tauri/gen/
+.vite/
+
+# Arşivlenmiş eski kurulum dosyaları
+_arsiv/
+
+# Claude Code yerel ayarları
+.claude/

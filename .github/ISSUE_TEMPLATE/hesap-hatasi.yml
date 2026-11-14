@@ -1,0 +1,37 @@
+name: Hesap hatası
+description: Program bir büyüklüğü (Ae, Nd, E, seviye, Rp, kapsama) yanlış hesaplıyor ya da standartla çelişiyor
+labels: [hesap]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Hesap hataları en yüksek önceliklidir. Lütfen sonucu elle ya da başka bir kaynakla nasıl karşılaştırdığınızı yazın.
+        Müşteri bilgisi içeren proje dosyası eklemeyin; aynı hatayı gösteren küçük bir örnek yeterlidir.
+  - type: textarea
+    id: girdiler
+    attributes:
+      label: Girdiler
+      description: Nk, ΔT, yapı boyutları ve yüksekliği, C1-C5, kot seviyeleri, paratoner konumu ve direk boyu
+    validations:
+      required: true
+  - type: textarea
+    id: programin-sonucu
+    attributes:
+      label: Programın sonucu
+      description: Ayrıntılı hesap penceresindeki "Hesap dökümü" satırlarını kopyalayabilirsiniz
+    validations:
+      required: true
+  - type: textarea
+    id: beklenen
+    attributes:
+      label: Beklenen sonuç ve dayanağı
+      description: Elle hesap, üretici tablosu ya da standart maddesi
+    validations:
+      required: true
+  - type: input
+    id: surum
+    attributes:
+      label: Sürüm
+      description: Yardım > Hakkında penceresinde yazar
+    validations:
+      required: true

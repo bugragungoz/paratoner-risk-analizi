@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Paratoner Risk Analizi uygulama simgesi (Bugra: sıcak siyah zemin, tek yeşil vurgu, dış hat işaret).
+       İşaret src/arayuz/ortak/Logo.tsx ile aynı yalın şimşektir; küçük boyutlarda okunsun diye çizgi kalın. -->
+  <rect x="32" y="32" width="960" height="960" rx="216" fill="#131110"/>
+  <rect x="32" y="32" width="960" height="960" rx="216" fill="none" stroke="#3a3530" stroke-width="12"/>
+  <g transform="translate(152 152) scale(30)">
+    <path d="M13.4 2.8 5.6 13.6h6.2l-1.4 7.6 8-11h-6.2z" fill="none" stroke="#3ddc84" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

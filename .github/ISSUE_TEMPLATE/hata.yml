@@ -1,0 +1,33 @@
+name: Hata bildirimi
+description: Program beklenmedik biçimde davranıyor (arayüz, dosya, harita, rapor)
+labels: [hata]
+body:
+  - type: textarea
+    id: ne-oldu
+    attributes:
+      label: Ne oldu?
+      description: Ne yapmaya çalışıyordunuz, ne bekliyordunuz, ne oldu?
+    validations:
+      required: true
+  - type: textarea
+    id: adimlar
+    attributes:
+      label: Tekrarlama adımları
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: ayrinti
+    attributes:
+      label: Hata ayrıntısı
+      description: Hata ekranı çıktıysa "Ayrıntıyı kopyala" ile aldığınız metni yapıştırın
+      render: text
+  - type: input
+    id: surum
+    attributes:
+      label: Sürüm ve Windows sürümü
+      placeholder: 1.9.0, Windows 11 23H2
+    validations:
+      required: true
