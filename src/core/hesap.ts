@@ -259,10 +259,50 @@ export function yapiyiHesapla(yapi: Yapi, proje: Proje, paratonerler: Paratoner[
 }
 
 /** Projenin tamamı: doğrulama + her yapının sonucu. */
+/** Projenin hesaba girmeyen alanları: ad, rapor bilgileri ve harita görünümü. */
+const HESABA_GIRMEYEN: ReadonlySet<string> = new Set([
+  'isim',
+  'tesis_adresi',
+  'cihaz',
+  'rapor_no',
+  'revizyonlar',
+  'harita_merkez_lat',
+  'harita_merkez_lng',
+  'harita_zoom',
+]);
+
+/**
+ * İki proje yalnızca hesaba girmeyen alanlarda farklıysa true döner; o zaman `projeyiHesapla`
+ * sonucu aynıdır ve yeniden hesap gerekmez. Diğer bütün alanlar başvuru eşitliğiyle karşılaştırılır,
+ * yani listede olmayan yeni bir alan kendiliğinden "hesaba girer" sayılır.
+ */
+export function hesapGirdisiAyni(a: Proje, b: Proje): boolean {
+  if (a === b) return true;
+  const x = a as unknown as Record<string, unknown>;
+  const y = b as unknown as Record<string, unknown>;
+  for (const k of new Set([...Object.keys(x), ...Object.keys(y)])) {
+    if (!HESABA_GIRMEYEN.has(k) && x[k] !== y[k]) return false;
+  }
+  return true;
+}
+
 export function projeyiHesapla(proje: Proje): ProjeSonucu {
   const paratonerler = hesabaGirenParatonerler(proje);
   return {
     dogrulama: projeyiDogrula(proje),
     yapilar: proje.yapilar.map((yapi) => yapiyiHesapla(yapi, proje, paratonerler)),
+  };
+}
+
+/**
+ * Son hesabı hatırlayan `projeyiHesapla`: proje yalnızca hesaba girmeyen alanlarda değiştiyse
+ * önceki sonucu (aynı nesneyi) döndürür.
+ */
+export function onbellekliHesap(): (proje: Proje) => ProjeSonucu {
+  let onceki: { proje: Proje; sonuc: ProjeSonucu } | null = null;
+  return (proje) => {
+    const sonuc = onceki && hesapGirdisiAyni(onceki.proje, proje) ? onceki.sonuc : projeyiHesapla(proje);
+    onceki = { proje, sonuc };
+    return sonuc;
   };
 }

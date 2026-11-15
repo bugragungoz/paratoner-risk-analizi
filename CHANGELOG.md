@@ -3,6 +3,15 @@
 Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; sürümler
 [anlamsal sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## 1.9.1 (2026-11-15)
+
+### Düzeltildi
+
+- Rapor penceresinde rapor numarası ya da tesis adresi, üst çubukta proje adı yazılırken program
+  takılmıyor. Hesaba girmeyen bu alanlar değiştiğinde bütün proje yeniden hesaplanıyor ve
+  paratoner katmanı baştan çiziliyordu; 12 yapılı bir projede tuş başına yaklaşık 0,9 saniye
+  sürüyordu.
+
 ## 1.9.0 (2026-11-15)
 
 İlk açık sürüm.

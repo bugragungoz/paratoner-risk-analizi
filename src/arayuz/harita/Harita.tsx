@@ -581,7 +581,10 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
         }),
       }).addTo(k.paratoner);
     });
-  }, [proje, sonuc, izolasyon, odakYapiId, hEsikleri, seviyeler]);
+    // Bağımlılıklar projenin tamamı değil, çizimin okuduğu alanlardır: rapor numarası ya da adres
+    // yazılırken paratoner katmanı baştan kurulmaz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proje.yapilar, proje.paratonerler, proje.deltaT, proje.deltaT_modu, sonuc, izolasyon, odakYapiId, hEsikleri, seviyeler]);
 
   // ---------------------------------------------------------------- Street View işareti
   useEffect(() => {

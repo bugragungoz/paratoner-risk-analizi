@@ -378,3 +378,32 @@ describe('Giriş hatası uyarıları (hesabı engellemez)', () => {
     expect(ck.kotMetni(11.5, 2)).toBe('+11,50');
   });
 });
+
+describe('hesaba girmeyen alanlar', () => {
+  test('rapor bilgileri ve proje adı değişince hesap girdisi aynı sayılır, sonuç da aynıdır', () => {
+    const p = kanitSenaryosu();
+    const q = { ...p, isim: 'Başka ad', rapor_no: 'R-1', tesis_adresi: 'Adres', revizyonlar: [{ no: '1', tarih: '', aciklama: '' }], harita_zoom: 3 };
+    expect(ck.hesapGirdisiAyni(p, q)).toBe(true);
+    expect(ck.projeyiHesapla(q)).toEqual(ck.projeyiHesapla(p));
+  });
+
+  test('hesaba giren her alan girdiyi değiştirir', () => {
+    const p = kanitSenaryosu();
+    expect(ck.hesapGirdisiAyni(p, { ...p, Nk: (p.Nk ?? 0) + 1 })).toBe(false);
+    expect(ck.hesapGirdisiAyni(p, { ...p, deltaT: 45 })).toBe(false);
+    expect(ck.hesapGirdisiAyni(p, { ...p, yapilar: [...p.yapilar] })).toBe(false);
+    expect(ck.hesapGirdisiAyni(p, { ...p, paratonerler: [...p.paratonerler] })).toBe(false);
+    expect(ck.hesapGirdisiAyni(p, { ...p, kot_seviyeleri: [...p.kot_seviyeleri] })).toBe(false);
+    expect(ck.hesapGirdisiAyni(p, { ...p, bilinmeyen_alan: 1 })).toBe(false);
+  });
+
+  test('önbellekli hesap: rapor alanı değişince aynı sonuç nesnesi, hesap alanı değişince yeni sonuç', () => {
+    const hesapla = ck.onbellekliHesap();
+    const p = kanitSenaryosu();
+    const s1 = hesapla(p);
+    expect(hesapla({ ...p, rapor_no: 'R-2' })).toBe(s1);
+    const s2 = hesapla({ ...p, rapor_no: 'R-2', deltaT: 30 });
+    expect(s2).not.toBe(s1);
+    expect(s2).toEqual(ck.projeyiHesapla({ ...p, deltaT: 30 }));
+  });
+});

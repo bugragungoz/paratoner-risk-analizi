@@ -1,7 +1,7 @@
 // Uygulamanın tek durum kaynağı: proje, geçmiş, hesap sonucu, dosya durumu ve uygulama ayarları.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
-import { projeyiHesapla, yeniProje, type Proje, type ProjeSonucu } from '../../core';
+import { onbellekliHesap, yeniProje, type Proje, type ProjeSonucu } from '../../core';
 import { ANAHTARSIZ, anahtarDurumu, type AnahtarDurumu } from '../harita/servisler';
 import { useEtkilesim } from '../ortak/Etkilesim';
 import { Wordmark } from '../ortak/Logo';
@@ -198,7 +198,10 @@ export function ProjeSaglayici({ children }: { children: ReactNode }) {
     return () => clearTimeout(z);
   }, [proje, kaydedilmemis, ayarlar.otomatikKayit, ayarlar.otomatikKayitKonumu, bildir]);
 
-  const sonuc = useMemo(() => (proje ? projeyiHesapla(proje) : null), [proje]);
+  // Rapor numarası, adres, proje adı gibi hesaba girmeyen alanlar yazılırken hesap yinelenmez:
+  // büyük projede her tuşta yüzlerce milisaniyelik hesap, yazmayı takılır hale getiriyordu.
+  const [hesapla] = useState(onbellekliHesap);
+  const sonuc = useMemo(() => (proje ? hesapla(proje) : null), [proje, hesapla]);
 
   const guncelle = useCallback((fn: (p: Proje) => Proje, birlestir?: string) => {
     dispatch(birlestir === undefined ? { tur: 'guncelle', fn } : { tur: 'guncelle', fn, birlestir });

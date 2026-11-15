@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "1.9.0"
+version = "1.9.1"
 description = "Paratoner Risk Analizi — NF C 17-102 esaslı aktif paratoner koruma analizi"
 authors = ["Buğra Güngöz"]
 license = "GPL-3.0-or-later"
