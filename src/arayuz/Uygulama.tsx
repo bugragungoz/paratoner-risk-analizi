@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { sayi, type LatLng, type Paratoner, type Seviye, type Yapi } from '../core';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { cizimKoordinati, ikiNoktaHizala, projeOrtasi, sayi, type LatLng, type Paratoner, type Seviye, type XY, type Yapi } from '../core';
 import { paratonerEkle, paratonerGuncelle, paratonerTasi, parselAyarla, poligonGuncelle, yapiEkle, yapiGuncelle } from './durum/eylemler';
 import { useProje } from './durum/ProjeSaglayici';
 import { useDosyaIslemleri } from './durum/useDosyaIslemleri';
-import { Harita, type CizimModu, type HaritaApi, type HaritaGorunumu } from './harita/Harita';
+import { Harita, type AltlikGorunumu, type CizimModu, type HaritaApi, type HaritaGorunumu } from './harita/Harita';
+import { useMetinler } from './ortak/useMetinler';
 import { useEtkilesim } from './ortak/Etkilesim';
 import { CizimModuPaneli } from './paneller/CizimModuPaneli';
 import { DurumCubugu } from './paneller/DurumCubugu';
@@ -20,6 +21,8 @@ import { ParatonerFormu } from './pencereler/ParatonerFormu';
 import { RaporSihirbazi } from './pencereler/RaporSihirbazi';
 import { KmlIceAktarPenceresi } from './pencereler/KmlIceAktarPenceresi';
 import { DxfDisaAktarPenceresi } from './pencereler/DxfDisaAktarPenceresi';
+import { AltlikPaneli } from './paneller/AltlikPaneli';
+import { useAltlik } from './durum/useAltlik';
 import { useKmlIslemleri } from './durum/useKmlIslemleri';
 import { StreetViewPaneli } from './pencereler/StreetViewPaneli';
 import { HakkindaPenceresi } from './pencereler/HakkindaPenceresi';
@@ -36,7 +39,8 @@ const ilkGorunum = (): HaritaGorunumu => ({ hEsikleri: new Set<number>(), seviye
 
 export function Uygulama() {
   const { proje, guncelle, geriAl, yinele, geriAlinabilir, yinelenebilir, kaydedilmemis, acilisNotu, ayarlar, ayarGuncelle } = useProje();
-  const { onayla } = useEtkilesim();
+  const { onayla, bildir } = useEtkilesim();
+  const m = useMetinler();
   const haritaRef = useRef<HaritaApi | null>(null);
 
   const [mod, setMod] = useState<CizimModu>('yok');
@@ -79,6 +83,55 @@ export function Uygulama() {
   }, [durumuSifirla]);
   const dosya = useDosyaIslemleri({ acildi, yeniBasladi });
   const kml = useKmlIslemleri();
+  const altlik = useAltlik(
+    () => ({ harita: haritaRef.current?.merkez() ?? null, proje: projeOrtasi(proje) }),
+    () => setTimeout(() => haritaRef.current?.altligaGit(), 150),
+  );
+  // İki nokta hizalaması: çizimde seçilen noktalar (çizim koordinatı ve haritadaki yeri) ve haritadaki karşılıkları.
+  const [hizalamaDurumu, setHizalama] = useState<{ serbest: boolean; cizim: XY[]; cizimYeri: LatLng[]; harita: LatLng[] } | null>(null);
+  const hizalama = mod === 'altlik' ? hizalamaDurumu : null;
+  const altlikGorunumu = useMemo<AltlikGorunumu | null>(
+    () =>
+      altlik.ayar && altlik.cozum
+        ? { cozum: altlik.cozum, ayar: altlik.ayar, cizimNoktalari: hizalama?.cizimYeri ?? [], haritaNoktalari: hizalama?.harita ?? [] }
+        : null,
+    [altlik.ayar, altlik.cozum, hizalama],
+  );
+  const hizalamaBaslat = useCallback(
+    (serbest: boolean) => {
+      if (!altlik.ayar || !altlik.cozum) return;
+      setHizalama({ serbest, cizim: [], cizimYeri: [], harita: [] });
+      setMod('altlik');
+    },
+    [altlik.ayar, altlik.cozum],
+  );
+  const altlikNoktasi = (nokta: LatLng) => {
+    const a = altlik.ayar;
+    if (!hizalama || !a) return;
+    const cizimSirasi = hizalama.cizim.length === hizalama.harita.length;
+    if (cizimSirasi) {
+      const yer = haritaRef.current?.altlikKosesi(nokta) ?? nokta;
+      setHizalama({ ...hizalama, cizim: [...hizalama.cizim, cizimKoordinati(a.hizalama, a.birim, yer)], cizimYeri: [...hizalama.cizimYeri, yer] });
+      return;
+    }
+    const yer = haritaRef.current?.ogeKosesi(nokta) ?? nokta;
+    const harita = [...hizalama.harita, yer];
+    if (harita.length < 2) {
+      setHizalama({ ...hizalama, harita });
+      return;
+    }
+    try {
+      const s = ikiNoktaHizala(hizalama.cizim[0]!, hizalama.cizim[1]!, harita[0]!, harita[1]!, a.birim, hizalama.serbest);
+      altlik.degistir({ hizalama: s.hizalama }, 'altlik-hizala');
+      const fark = `%${(Math.abs(s.olcekOrani - 1) * 100).toFixed(2).replace('.', ',')}`;
+      const aci = s.hizalama.tur === 'benzerlik' ? ((s.hizalama.aci * 180) / Math.PI).toFixed(2).replace('.', ',') : '0';
+      bildir(m.altlik.hizalandi(aci, fark), 'basari');
+      if (Math.abs(s.olcekOrani - 1) > 0.01) bildir(m.altlik.olcekUyarisi(fark), 'hata');
+    } catch (e) {
+      bildir(m.altlik.hizalanamadi(e instanceof Error ? e.message : String(e)), 'hata');
+    }
+    setMod('yok');
+  };
   const { kaydet, farkliKaydet, ac, yeni } = dosya;
 
   // Pencere başlığı: proje adı ve kaydedilmemiş değişiklik işareti (•).
@@ -199,6 +252,7 @@ export function Uygulama() {
         dosya={dosya}
         kml={kml}
         dxfAc={() => setAcikPencere('dxf')}
+        altlikEkle={altlik.ekle}
         git={(lat, lng) => haritaRef.current?.git(lat, lng)}
         merkez={() => haritaRef.current?.merkez() ?? null}
         hesapTablosuAc={() => setAcikPencere('hesap')}
@@ -215,6 +269,7 @@ export function Uygulama() {
           <KotPaneli />
           <OgeListesi paratonerDuzenle={setDuzenlenenParatoner} yapiDuzenle={setDuzenlenenYapi} />
           <GorunumPaneli gorunum={gorunum} degistir={setGorunum} />
+          <AltlikPaneli altlik={altlik} hizalamaBaslat={hizalamaBaslat} hizalamada={mod === 'altlik'} altligaGit={() => haritaRef.current?.altligaGit()} />
           <Sorumluluk />
         </aside>
 
@@ -222,6 +277,8 @@ export function Uygulama() {
           <Harita
             ref={haritaRef}
             mod={mod}
+            altlik={altlikGorunumu}
+            onAltlikNoktasi={altlikNoktasi}
             moddanCik={() => setMod('yok')}
             gorunum={gorunum}
             poligonDuzenlenenYapiId={poligonDuzenlenen}
@@ -247,6 +304,11 @@ export function Uygulama() {
           />
           <Lejant gorunum={gorunum} />
           {olcum !== null && <div className="olcut-sonuc">Toplam mesafe: {sayi(olcum)} m</div>}
+          {mod === 'altlik' && hizalama && (
+            <div className="olcut-sonuc">
+              {m.altlik.adimlar[hizalama.cizim.length + hizalama.harita.length]} · {m.altlik.vazgec}
+            </div>
+          )}
           {poligonDuzenlenen && (
             <div className="olcut-sonuc">
               Poligon köşelerini sürükleyerek düzenleyin.

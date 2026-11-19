@@ -65,6 +65,7 @@ pub fn run() {
             proje_dosyasi::otomatik_kayit_yaz,
             proje_dosyasi::otomatik_kayitlari_listele,
             proje_dosyasi::kml_dosyasi_oku,
+            proje_dosyasi::dxf_dosyasi_oku,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

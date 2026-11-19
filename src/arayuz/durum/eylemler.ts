@@ -1,6 +1,6 @@
 // Projeyi değiştiren işlemler: her biri saf bir (Proje → Proje) dönüşümü üretir.
 
-import { bagimliOgeler, type DeltaTModu, type KotSeviyesi, type LatLng, type Paratoner, type Proje, type Revizyon, type Yapi } from '../../core';
+import { bagimliOgeler, type AltlikAyari, type DeltaTModu, type KotSeviyesi, type LatLng, type Paratoner, type Proje, type Revizyon, type Yapi } from '../../core';
 
 type Donusum = (p: Proje) => Proje;
 
@@ -22,6 +22,9 @@ export const raporNoAyarla = (rapor_no: string): Donusum => (p) => ({ ...p, rapo
 export const revizyonlarAyarla = (revizyonlar: Revizyon[]): Donusum => (p) => ({ ...p, revizyonlar });
 export const parselAyarla = (parsel_siniri: LatLng[] | null): Donusum => (p) => ({ ...p, parsel_siniri });
 export const yerelOrijinAyarla = (yerel_orijin: LatLng): Donusum => (p) => ({ ...p, yerel_orijin });
+/** Altlık ekler, değiştirir (kısmi) ya da kaldırır (null). */
+export const altlikAyarla = (altlik: AltlikAyari | null): Donusum => (p) => ({ ...p, altlik });
+export const altlikGuncelle = (d: Partial<AltlikAyari>): Donusum => (p) => (p.altlik ? { ...p, altlik: { ...p.altlik, ...d } } : p);
 
 // ---------------------------------------------------------------- Kot seviyeleri
 

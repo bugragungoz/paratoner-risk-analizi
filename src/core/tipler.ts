@@ -1,6 +1,8 @@
 // Paratoner Risk Analizi — hesap çekirdeği veri tipleri.
 // Alan adları, eski (v5) proje dosyalarıyla uyumlu kalacak şekilde korunmuştur.
 
+import type { AltlikAyari } from './altlik';
+
 export interface LatLng {
   lat: number;
   lng: number;
@@ -118,6 +120,8 @@ export interface Proje {
    * saklanır; böylece sonradan öğe eklense de yeni çıktı eskisiyle üst üste gelir. Hesabı etkilemez.
    */
   yerel_orijin?: LatLng | null;
+  /** DXF altlığı (yalnızca görsel; hesaba girmez). Çizimin kendisi değil, yolu ve hizalaması saklanır. */
+  altlik?: AltlikAyari | null;
   parsel_siniri: LatLng[] | null;
   kot_seviyeleri: KotSeviyesi[];
   paratonerler: Paratoner[];

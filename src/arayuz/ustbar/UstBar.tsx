@@ -17,6 +17,7 @@ interface Props {
   dosya: DosyaIslemleri;
   kml: Pick<KmlIslemleri, 'iceAktar' | 'disaAktar'>;
   dxfAc: () => void;
+  altlikEkle: () => void;
   git: (lat: number, lng: number) => void;
   /** Haritanın merkezi (aramada yakındaki sonuçlar öne çıksın). */
   merkez: () => { lat: number; lng: number } | null;
@@ -69,11 +70,13 @@ function DosyaMenusu({
   dosya,
   kml,
   dxfAc,
+  altlikEkle,
   ayarlarAc,
 }: {
   dosya: DosyaIslemleri;
   kml: Pick<KmlIslemleri, 'iceAktar' | 'disaAktar'>;
   dxfAc: () => void;
+  altlikEkle: () => void;
   ayarlarAc: (sekme?: AyarSekmesi) => void;
 }) {
   const { sonDosyalar } = useProje();
@@ -112,6 +115,9 @@ function DosyaMenusu({
           <button role="menuitem" onClick={yap(dxfAc)}>
             {m.dxf.menu}
           </button>
+          <button role="menuitem" onClick={yap(altlikEkle)}>
+            {m.altlik.menu}
+          </button>
           {masaustu && (
             <>
               <hr />
@@ -147,7 +153,7 @@ export function UstBar(p: Props) {
         <button onClick={() => p.dosya.kaydet()} title={dosyaYolu ? `Kaydet: ${dosyaYolu} (Ctrl+S)` : 'Projeyi kaydet (Ctrl+S)'}>
           <Save size={14} /> Kaydet
         </button>
-        <DosyaMenusu dosya={p.dosya} kml={p.kml} dxfAc={p.dxfAc} ayarlarAc={p.ayarlarAc} />
+        <DosyaMenusu dosya={p.dosya} kml={p.kml} dxfAc={p.dxfAc} altlikEkle={p.altlikEkle} ayarlarAc={p.ayarlarAc} />
         <span className="ayirac" />
         <HesapDurumu />
         <button onClick={geriAl} disabled={!geriAlinabilir} title="Geri al (Ctrl+Z)" className="ikon-kare">

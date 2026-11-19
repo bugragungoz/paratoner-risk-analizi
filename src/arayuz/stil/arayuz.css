@@ -445,6 +445,30 @@ button.sekme.aktif { color: var(--ink); border-bottom-color: var(--accent-ink); 
 .hesap-dokum { border-bottom: 1px solid var(--line); }
 .hesap-dokum > summary { padding: 7px 12px; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; user-select: none; }
 .hesap-dokum > summary:hover, .hesap-dokum[open] > summary { color: var(--ink); }
+/* DXF altlık paneli */
+.altlik-paneli { display: flex; flex-direction: column; gap: 8px; }
+.altlik-paneli h3, .altlik-paneli h4 { margin: 0; }
+.altlik-baslik { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.altlik-baslik h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.altlik-paneli .ipucu-kucuk { margin: 0; }
+.altlik-uyari { color: var(--warn); }
+.altlik-durum { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.altlik-satir { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 8px; font-size: 12.5px; }
+.altlik-satir select, .altlik-satir input[type="range"] { width: 100%; min-width: 0; }
+.altlik-dugmeler { display: flex; gap: 8px; }
+.altlik-dugmeler > button:first-child { flex: 1; justify-content: center; }
+.altlik-ince { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.altlik-oklar { display: grid; grid-template-columns: repeat(3, auto); gap: 4px; align-items: center; justify-items: center; }
+.altlik-oklar select, .altlik-donus select { width: auto; padding: 4px 6px; font-size: 12px; }
+.altlik-donus { display: flex; align-items: center; gap: 4px; }
+.altlik-tumu { display: flex; gap: 4px; }
+.altlik-katmanlar { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-xs); }
+.altlik-katmanlar li label { display: grid; grid-template-columns: auto 12px 1fr auto; align-items: center; gap: 8px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
+.altlik-katmanlar li + li { border-top: 1px solid var(--line); }
+.altlik-renk { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line-strong); }
+.altlik-katman-ad { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.altlik-sayi { color: var(--muted); font-variant-numeric: tabular-nums; }
+
 /* DXF dışa aktarma */
 .dxf-pencere { gap: 10px; }
 .form-dikey label.dxf-secenek { flex-direction: row; align-items: flex-start; gap: 10px; cursor: pointer; }

@@ -102,6 +102,28 @@ export async function kmlDosyasiSec(filtreAdi: string): Promise<{ ad: string; ba
   return { ad: dosya.name, bayt: new Uint8Array(await dosya.arrayBuffer()) };
 }
 
+/** Altlık DXF dosyası için üst sınır (bayt). Rust'taki DXF_SINIRI ile aynı. */
+export const DXF_DOSYA_SINIRI = 100 * 1024 * 1024;
+
+/** Altlık için DXF dosyası seçtirip okur; iptalde null. Masaüstünde yol da döner (proje onu saklar). */
+export async function dxfDosyasiSec(filtreAdi: string): Promise<{ yol: string | null; ad: string; bayt: Uint8Array } | null> {
+  if (tauriMi()) {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const yol = await open({ multiple: false, directory: false, filters: [{ name: filtreAdi, extensions: ['dxf'] }] });
+    if (typeof yol !== 'string') return null;
+    return { yol, ad: dosyaAdiAyikla(yol), bayt: await dxfDosyasiOku(yol) };
+  }
+  const dosya = await tarayicidaDosyaSec('.dxf,image/vnd.dxf,application/dxf');
+  if (!dosya) return null;
+  if (dosya.size > DXF_DOSYA_SINIRI) throw new Error('Dosya altlık için fazla büyük (en çok 100 MB).');
+  return { yol: null, ad: dosya.name, bayt: new Uint8Array(await dosya.arrayBuffer()) };
+}
+
+/** Projede yolu saklı altlık DXF dosyasını okur (masaüstü). */
+export async function dxfDosyasiOku(yol: string): Promise<Uint8Array> {
+  return new Uint8Array(await invoke<ArrayBuffer>('dxf_dosyasi_oku', { yol }));
+}
+
 export async function projeDosyasiOku(yol: string): Promise<string> {
   return invoke<string>('proje_dosyasi_oku', { yol });
 }

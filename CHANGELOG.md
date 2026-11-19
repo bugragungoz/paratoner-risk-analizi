@@ -26,6 +26,19 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; s
   (TUREF'te izdüşüm ölçek katsayısıyla), parsel sınırı, etiketler ve bilgi yazısı. Biçim AutoCAD R12
   (Türkçe Windows kod sayfası), birim metre, Z = 0.
 
+- **DXF altlık:** dosya menüsünden bir DXF çizimi (ör. vaziyet planı) haritada ayrı bir katman
+  olarak açılır; yalnızca görseldir, hesaba ve rapordaki harita şekline girmez.
+  - TUREF / TM koordinatlı çizim kendiliğinden yerine oturur (dilim, çizimi projeye en yakın yere
+    koyandır); koordinatsız çizim iki nokta ile hizalanır: çizimde ve haritada ikişer nokta seçilir
+    (çizim köşelerine, yapı köşelerine ve paratonerlere yakalanır), ölçek çizim biriminden gelir ve
+    noktalardan bulunan ölçekle farkı bildirilir. Ardından metre ve derece adımlarıyla ince ayar.
+  - Katmanlar ayrı ayrı gizlenir; opaklık, katman renkleri ya da tek renk; çizim birimi seçilebilir.
+  - Okunanlar: LINE, LWPOLYLINE/POLYLINE (yaylı), CIRCLE, ARC, ELLIPSE, SPLINE, SOLID/3DFACE,
+    LEADER, iç içe bloklar ve ölçüler; aynalanmış öğeler doğru yöne çevrilir. Yazılar ve taramalar
+    gösterilmez. AutoCAD R12–2018 ASCII DXF; eski sürümlerde kod sayfası ($DWGCODEPAGE) okunur.
+  - Projede çizimin kendisi değil yolu ve hizalaması saklanır (AutoCAD dış başvurusu gibi); proje
+    açılınca çizim yolundan yeniden okunur, bulunamazsa yeniden seçilir.
+
 ### Düzeltildi
 
 - **Hesap:** mesafe, alan ve kapsama elipsoit (GRS80) üzerinde, yapının yerel Transverse Mercator

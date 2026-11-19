@@ -3,6 +3,8 @@
 // Bozuk veya eksik bir dosya, hangi alanın hatalı olduğu söylenerek REDDEDİLİR; mühendislik
 // verisinde sessizce öğe atıp devam etmek yanlış sonuca götürebilir.
 
+import type { AltlikAyari, AltlikHizalamasi } from './altlik';
+import { TUREF_DILIMLERI, type TurefDilimi } from './koordinat';
 import { MALZEMELER, standartCMi, type CAdi } from './sabitler';
 import type { C2Secimi, DeltaTModu, KotSeviyesi, LatLng, Paratoner, Proje, Revizyon, Yapi } from './tipler';
 
@@ -161,6 +163,29 @@ function revizyonlarOku(x: unknown): Revizyon[] {
 }
 
 /** Ham proje nesnesini doğrular ve eksik alanları güvenli varsayılanlarla tamamlar. */
+/** Altlık ayarı (yalnızca görsel): geçersizse yok sayılır, projeyi açmayı engellemez. */
+function altlikOku(x: unknown): AltlikAyari | null {
+  if (!nesneMi(x) || !nesneMi(x.hizalama)) return null;
+  const h = x.hizalama;
+  const sayilar = (...a: unknown[]) => a.every((v) => typeof v === 'number' && Number.isFinite(v));
+  let hizalama: AltlikHizalamasi;
+  if (h.tur === 'turef' && (TUREF_DILIMLERI as readonly unknown[]).includes(h.dilim)) hizalama = { tur: 'turef', dilim: h.dilim as TurefDilimi };
+  else if (h.tur === 'benzerlik' && nesneMi(h.orijin) && sayilar(h.orijin.lat, h.orijin.lng, h.aci, h.olcek, h.tx, h.ty) && (h.olcek as number) > 0) {
+    hizalama = { tur: 'benzerlik', orijin: { lat: h.orijin.lat as number, lng: h.orijin.lng as number }, aci: h.aci as number, olcek: h.olcek as number, tx: h.tx as number, ty: h.ty as number };
+  } else return null;
+  if (!sayilar(x.birim) || (x.birim as number) <= 0) return null;
+  return {
+    yol: typeof x.yol === 'string' && x.yol ? x.yol : null,
+    ad: typeof x.ad === 'string' ? x.ad : 'altlık.dxf',
+    birim: x.birim as number,
+    hizalama,
+    gizliKatmanlar: Array.isArray(x.gizliKatmanlar) ? x.gizliKatmanlar.filter((k): k is string => typeof k === 'string') : [],
+    opaklik: sayilar(x.opaklik) ? Math.min(1, Math.max(0.05, x.opaklik as number)) : 0.8,
+    gorunur: x.gorunur !== false,
+    renk: x.renk === 'tek' ? 'tek' : 'katman',
+  };
+}
+
 export function projeyiDogrulaVeTamamla(ham: unknown): Proje {
   if (!nesneMi(ham)) return hata('Dosya bir proje içermiyor.');
   for (const alan of ['kot_seviyeleri', 'yapilar', 'paratonerler'] as const) {
@@ -189,6 +214,8 @@ export function projeyiDogrulaVeTamamla(ham: unknown): Proje {
   for (const alan of ['harita_merkez_lat', 'harita_merkez_lng', 'harita_zoom'] as const) {
     if (sayiMi(ham[alan])) proje[alan] = ham[alan];
   }
+  const altlik = altlikOku(ham.altlik);
+  if (altlik) proje.altlik = altlik;
   // Yalnızca DXF çıktısı için: geçersizse projeyi açmayı engellemez, yok sayılır.
   if (nesneMi(ham.yerel_orijin)) {
     try {

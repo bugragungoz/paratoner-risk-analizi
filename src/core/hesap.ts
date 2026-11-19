@@ -280,6 +280,7 @@ const HESABA_GIRMEYEN: ReadonlySet<string> = new Set([
   'harita_merkez_lng',
   'harita_zoom',
   'yerel_orijin',
+  'altlik',
 ]);
 
 /**

@@ -302,20 +302,39 @@ pub async fn otomatik_kayitlari_listele(app: AppHandle, konum: String) -> Result
 
 // ------------------------------------------------------------------ Google Earth (KML / KMZ)
 
-/// .kml ya da .kmz dosyasını ham bayt olarak okur; KMZ arşivi arayüzde açılır.
-fn kml_baytlari(yol: &str) -> Result<Vec<u8>, String> {
+/// İçe aktarılan dosyayı ham bayt olarak okur: uzantı ve boyut denetlenir.
+fn dis_dosya_baytlari(yol: &str, uzantilar: &[&str], sinir: u64, uzanti_hatasi: &str) -> Result<Vec<u8>, String> {
     let yol = mutlak_yol(yol)?;
-    if !matches!(uzanti(&yol).as_str(), "kml" | "kmz") {
-        return Err("Yalnızca .kml ya da .kmz dosyaları içe aktarılabilir.".into());
+    if !uzantilar.contains(&uzanti(&yol).as_str()) {
+        return Err(uzanti_hatasi.into());
     }
     let bilgi = fs::metadata(&yol).map_err(|e| format!("Dosya açılamadı: {e}"))?;
     if !bilgi.is_file() {
         return Err("Seçilen öğe bir dosya değil.".into());
     }
-    if bilgi.len() > KML_SINIRI {
-        return Err("Dosya içe aktarmak için fazla büyük (en çok 30 MB).".into());
+    if bilgi.len() > sinir {
+        return Err(format!("Dosya içe aktarmak için fazla büyük (en çok {} MB).", sinir / (1024 * 1024)));
     }
     fs::read(&yol).map_err(|e| format!("Dosya okunamadı: {e}"))
+}
+
+/// .kml ya da .kmz dosyasını ham bayt olarak okur; KMZ arşivi arayüzde açılır.
+fn kml_baytlari(yol: &str) -> Result<Vec<u8>, String> {
+    dis_dosya_baytlari(yol, &["kml", "kmz"], KML_SINIRI, "Yalnızca .kml ya da .kmz dosyaları içe aktarılabilir.")
+}
+
+/// Altlık olarak açılan DXF dosyası boyut sınırı (bayt).
+const DXF_SINIRI: u64 = 100 * 1024 * 1024;
+
+/// Altlık DXF dosyasını ham bayt olarak okur (çözümleme arayüzde yapılır).
+#[tauri::command]
+pub async fn dxf_dosyasi_oku(yol: String) -> Result<tauri::ipc::Response, String> {
+    let bayt = tauri::async_runtime::spawn_blocking(move || {
+        dis_dosya_baytlari(&yol, &["dxf"], DXF_SINIRI, "Yalnızca .dxf dosyaları altlık olarak açılabilir.")
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    Ok(tauri::ipc::Response::new(bayt))
 }
 
 /// Kullanıcının seçtiği KML/KMZ dosyasını okur (arayüze ArrayBuffer olarak döner).
@@ -355,6 +374,13 @@ mod testler {
         assert!(kml_baytlari(txt.to_str().unwrap()).is_err());
         assert!(kml_baytlari("goreli/Saha.kml").is_err());
         assert!(kml_baytlari(klasor.join("yok.kmz").to_str().unwrap()).is_err());
+        let dxf = klasor.join("Plan.DXF");
+        fs::write(&dxf, b"0
+EOF
+").unwrap();
+        assert!(dis_dosya_baytlari(dxf.to_str().unwrap(), &["dxf"], DXF_SINIRI, "x").is_ok());
+        assert!(dis_dosya_baytlari(dxf.to_str().unwrap(), &["dxf"], 3, "x").unwrap_err().contains("fazla büyük"));
+        assert!(dis_dosya_baytlari(kml.to_str().unwrap(), &["dxf"], DXF_SINIRI, "yalnızca dxf").unwrap_err().contains("yalnızca dxf"));
         let _ = fs::remove_dir_all(&klasor);
     }
 

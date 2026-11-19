@@ -8,3 +8,6 @@
 *.icns binary
 *.docx binary
 *.msi binary
+
+# DXF örnekleri bayt bayt korunur (kod sayfasıyla yazılmış metin, CRLF).
+*.dxf binary
