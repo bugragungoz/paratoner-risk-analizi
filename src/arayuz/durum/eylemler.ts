@@ -21,6 +21,7 @@ export const cihazAyarla = (cihaz: string): Donusum => (p) => ({ ...p, cihaz });
 export const raporNoAyarla = (rapor_no: string): Donusum => (p) => ({ ...p, rapor_no });
 export const revizyonlarAyarla = (revizyonlar: Revizyon[]): Donusum => (p) => ({ ...p, revizyonlar });
 export const parselAyarla = (parsel_siniri: LatLng[] | null): Donusum => (p) => ({ ...p, parsel_siniri });
+export const yerelOrijinAyarla = (yerel_orijin: LatLng): Donusum => (p) => ({ ...p, yerel_orijin });
 
 // ---------------------------------------------------------------- Kot seviyeleri
 

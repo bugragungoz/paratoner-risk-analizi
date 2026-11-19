@@ -19,6 +19,7 @@ import { HesapTablosu } from './pencereler/HesapTablosu';
 import { ParatonerFormu } from './pencereler/ParatonerFormu';
 import { RaporSihirbazi } from './pencereler/RaporSihirbazi';
 import { KmlIceAktarPenceresi } from './pencereler/KmlIceAktarPenceresi';
+import { DxfDisaAktarPenceresi } from './pencereler/DxfDisaAktarPenceresi';
 import { useKmlIslemleri } from './durum/useKmlIslemleri';
 import { StreetViewPaneli } from './pencereler/StreetViewPaneli';
 import { HakkindaPenceresi } from './pencereler/HakkindaPenceresi';
@@ -47,7 +48,7 @@ export function Uygulama() {
   const [yeniYapiPoligonu, setYeniYapiPoligonu] = useState<LatLng[] | null>(null);
   const [duzenlenenYapi, setDuzenlenenYapi] = useState<Yapi | null>(null);
   const [poligonDuzenlenen, setPoligonDuzenlenen] = useState<string | null>(null);
-  const [acikPencere, setAcikPencere] = useState<'hesap' | 'rapor' | 'ayarlar' | 'hakkinda' | 'kisayollar' | null>(null);
+  const [acikPencere, setAcikPencere] = useState<'hesap' | 'rapor' | 'ayarlar' | 'hakkinda' | 'kisayollar' | 'dxf' | null>(null);
   const [ayarSekmesi, setAyarSekmesi] = useState<AyarSekmesi>('proje');
 
   // Yalnızca geliştirme modunda: tarayıcıda uçtan uca test için harita API'si.
@@ -197,6 +198,7 @@ export function Uygulama() {
       <UstBar
         dosya={dosya}
         kml={kml}
+        dxfAc={() => setAcikPencere('dxf')}
         git={(lat, lng) => haritaRef.current?.git(lat, lng)}
         merkez={() => haritaRef.current?.merkez() ?? null}
         hesapTablosuAc={() => setAcikPencere('hesap')}
@@ -309,6 +311,7 @@ export function Uygulama() {
       {acikPencere === 'ayarlar' && <AyarlarPenceresi kapat={() => setAcikPencere(null)} ilkSekme={ayarSekmesi} kurtarmaAc={dosya.kurtarmaAc} />}
       {acikPencere === 'hakkinda' && <HakkindaPenceresi kapat={() => setAcikPencere(null)} />}
       {acikPencere === 'kisayollar' && <KisayollarPenceresi kapat={() => setAcikPencere(null)} />}
+      {acikPencere === 'dxf' && <DxfDisaAktarPenceresi kapat={() => setAcikPencere(null)} />}
       {kml.onizleme && (
         <KmlIceAktarPenceresi
           belge={kml.onizleme.belge}

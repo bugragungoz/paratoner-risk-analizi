@@ -189,6 +189,14 @@ export function projeyiDogrulaVeTamamla(ham: unknown): Proje {
   for (const alan of ['harita_merkez_lat', 'harita_merkez_lng', 'harita_zoom'] as const) {
     if (sayiMi(ham[alan])) proje[alan] = ham[alan];
   }
+  // Yalnızca DXF çıktısı için: geçersizse projeyi açmayı engellemez, yok sayılır.
+  if (nesneMi(ham.yerel_orijin)) {
+    try {
+      proje.yerel_orijin = nokta(ham.yerel_orijin, 'Yerel başlangıç noktası');
+    } catch {
+      // yok say
+    }
+  }
   return proje;
 }
 

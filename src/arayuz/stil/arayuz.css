@@ -445,6 +445,18 @@ button.sekme.aktif { color: var(--ink); border-bottom-color: var(--accent-ink); 
 .hesap-dokum { border-bottom: 1px solid var(--line); }
 .hesap-dokum > summary { padding: 7px 12px; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; user-select: none; }
 .hesap-dokum > summary:hover, .hesap-dokum[open] > summary { color: var(--ink); }
+/* DXF dışa aktarma */
+.dxf-pencere { gap: 10px; }
+.form-dikey label.dxf-secenek { flex-direction: row; align-items: flex-start; gap: 10px; cursor: pointer; }
+.dxf-secenek > input { width: auto; margin-top: 2px; }
+.form-dikey .dxf-alt label { flex-direction: row; align-items: center; gap: 8px; }
+.dxf-alt select { width: auto; }
+.dxf-secenek > span { display: flex; flex-direction: column; gap: 2px; }
+.dxf-secenek .ipucu-kucuk { margin: 0; }
+.dxf-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 26px; }
+.dxf-alt .ipucu-kucuk { margin: 0; }
+.dxf-uyari { color: var(--warn); }
+
 /* KML içe aktarma önizlemesi */
 .kml-aktar { display: flex; flex-direction: column; gap: 10px; }
 .kml-aktar > .ipucu { margin: 0; }

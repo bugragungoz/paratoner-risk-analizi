@@ -18,6 +18,14 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; s
   - Saha uygulamaları için `pt_` önekli alanlarla şema (sürüm 1): yükseklik, kot, katsayılar, çatıdaki
     paratonerin yapısı ve konum doğruluğu taşınabilir.
 
+- **AutoCAD DXF dışa aktarma:** dosya menüsünden. Koordinat sistemi olarak TUREF / TM (3° dilim,
+  EPSG 5253-5259; vaziyet planlarıyla aynı, dilim proje konumundan önerilir) ya da yerel metrik
+  sistem seçilir; yerel sistemin başlangıç noktası ilk çıktıda projeye kaydedilir, sonraki çıktılar
+  üst üste gelir. Yapılar sonuca göre ayrı katmanlarda (YAPI_KORUNUYOR, YAPI_KORUNMUYOR,
+  YAPI_ISTEGE_BAGLI, YAPI_HESAPLANAMADI), açıkta kalan alanlar, paratonerler, gerçek Rp daireleri
+  (TUREF'te izdüşüm ölçek katsayısıyla), parsel sınırı, etiketler ve bilgi yazısı. Biçim AutoCAD R12
+  (Türkçe Windows kod sayfası), birim metre, Z = 0.
+
 ### Düzeltildi
 
 - **Hesap:** mesafe, alan ve kapsama elipsoit (GRS80) üzerinde, yapının yerel Transverse Mercator
