@@ -5,14 +5,17 @@ import { etkinTema } from '../durum/ayarlar';
 import { projeAdi } from '../durum/eylemler';
 import { useProje } from '../durum/ProjeSaglayici';
 import type { DosyaIslemleri } from '../durum/useDosyaIslemleri';
+import type { KmlIslemleri } from '../durum/useKmlIslemleri';
 import { KATMAN_ADLARI, KATMANLAR, etkinKatman, katmanKullanilabilir, type KatmanAdi } from '../harita/katmanlar';
 import type { AyarSekmesi } from '../pencereler/AyarlarPenceresi';
+import { useMetinler } from '../ortak/useMetinler';
 import { disBaglantiAc, tauriMi } from '../platform/tauri';
 import { AramaKutusu } from './AramaKutusu';
 import { HesapDurumu } from './HesapDurumu';
 
 interface Props {
   dosya: DosyaIslemleri;
+  kml: Pick<KmlIslemleri, 'iceAktar' | 'disaAktar'>;
   git: (lat: number, lng: number) => void;
   /** Haritanın merkezi (aramada yakındaki sonuçlar öne çıksın). */
   merkez: () => { lat: number; lng: number } | null;
@@ -61,8 +64,17 @@ function YardimMenusu({ kisayollarAc, hakkindaAc, ayarlarAc }: { kisayollarAc: (
 }
 
 /** Farklı kaydet, son dosyalar ve otomatik kayıtlar menüsü. */
-function DosyaMenusu({ dosya, ayarlarAc }: { dosya: DosyaIslemleri; ayarlarAc: (sekme?: AyarSekmesi) => void }) {
+function DosyaMenusu({
+  dosya,
+  kml,
+  ayarlarAc,
+}: {
+  dosya: DosyaIslemleri;
+  kml: Pick<KmlIslemleri, 'iceAktar' | 'disaAktar'>;
+  ayarlarAc: (sekme?: AyarSekmesi) => void;
+}) {
   const { sonDosyalar } = useProje();
+  const m = useMetinler();
   const [acik, setAcik] = useState(false);
   const masaustu = tauriMi();
   const yap = (fn: () => void) => () => {
@@ -86,6 +98,13 @@ function DosyaMenusu({ dosya, ayarlarAc }: { dosya: DosyaIslemleri; ayarlarAc: (
           </button>
           <button role="menuitem" onClick={yap(() => dosya.ac())}>
             Dosyadan aç… <kbd>Ctrl+O</kbd>
+          </button>
+          <hr />
+          <button role="menuitem" onClick={yap(() => kml.iceAktar())}>
+            {m.kml.iceAktar}
+          </button>
+          <button role="menuitem" onClick={yap(() => kml.disaAktar())}>
+            {m.kml.disaAktar}
           </button>
           {masaustu && (
             <>
@@ -122,7 +141,7 @@ export function UstBar(p: Props) {
         <button onClick={() => p.dosya.kaydet()} title={dosyaYolu ? `Kaydet: ${dosyaYolu} (Ctrl+S)` : 'Projeyi kaydet (Ctrl+S)'}>
           <Save size={14} /> Kaydet
         </button>
-        <DosyaMenusu dosya={p.dosya} ayarlarAc={p.ayarlarAc} />
+        <DosyaMenusu dosya={p.dosya} kml={p.kml} ayarlarAc={p.ayarlarAc} />
         <span className="ayirac" />
         <HesapDurumu />
         <button onClick={geriAl} disabled={!geriAlinabilir} title="Geri al (Ctrl+Z)" className="ikon-kare">

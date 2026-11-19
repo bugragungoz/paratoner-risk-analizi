@@ -8,6 +8,8 @@ export * from './risk';
 export * from './kot';
 export * from './geometri';
 export * from './koordinat';
+export * from './kml';
+export * from './kmlOku';
 export * from './dogrulama';
 export * from './hesap';
 export * from './rapor';

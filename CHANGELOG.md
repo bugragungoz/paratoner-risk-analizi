@@ -5,6 +5,19 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; s
 
 ## Yayımlanmamış
 
+### Eklendi
+
+- **Google Earth (KML / KMZ):** dosya menüsünden dışa ve içe aktarma.
+  - Dışa aktarılan KML'de yapılar sonuç renkleriyle, paratonerler, her yapıya ulaşan paratonerin
+    gerçek Rp dairesi ve parsel sınırı ayrı klasörlerde yer alır; yükseklik, kot, katsayılar ve
+    sonuçlar Google Earth balonunda okunur.
+  - İçe aktarmada noktalar paratoner, poligonlar yapı ya da parsel sınırı olarak önerilir; tür, ad,
+    yükseklik ve taban (kot ya da çatı) önizlemede düzeltilir, öğeler tek adımda (tek geri alma)
+    eklenir. Mast yüksekliği girilmeden paratoner eklenmez; yüksekliği ya da katsayıları eksik yapı
+    eklenir ama "hesaplanamadı" görünür. Kot ve yükseklik KML'in yükseklik değerinden alınmaz.
+  - Saha uygulamaları için `pt_` önekli alanlarla şema (sürüm 1): yükseklik, kot, katsayılar, çatıdaki
+    paratonerin yapısı ve konum doğruluğu taşınabilir.
+
 ### Düzeltildi
 
 - **Hesap:** mesafe, alan ve kapsama elipsoit (GRS80) üzerinde, yapının yerel Transverse Mercator

@@ -16,6 +16,8 @@ const OTOMATIK_KAYIT_KLASORU: &str = "Paratoner Otomatik Kayıt";
 const YEDEK_KLASORU: &str = "yedekler";
 /// Her proje için saklanan en fazla yedek sayısı.
 const YEDEK_SAYISI: usize = 5;
+/// İçe aktarılan Google Earth dosyası (.kml / .kmz) boyut sınırı (bayt).
+const KML_SINIRI: u64 = 30 * 1024 * 1024;
 
 fn uzanti(yol: &Path) -> String {
     yol.extension()
@@ -298,6 +300,33 @@ pub async fn otomatik_kayitlari_listele(app: AppHandle, konum: String) -> Result
     .map_err(|e| e.to_string())?
 }
 
+// ------------------------------------------------------------------ Google Earth (KML / KMZ)
+
+/// .kml ya da .kmz dosyasını ham bayt olarak okur; KMZ arşivi arayüzde açılır.
+fn kml_baytlari(yol: &str) -> Result<Vec<u8>, String> {
+    let yol = mutlak_yol(yol)?;
+    if !matches!(uzanti(&yol).as_str(), "kml" | "kmz") {
+        return Err("Yalnızca .kml ya da .kmz dosyaları içe aktarılabilir.".into());
+    }
+    let bilgi = fs::metadata(&yol).map_err(|e| format!("Dosya açılamadı: {e}"))?;
+    if !bilgi.is_file() {
+        return Err("Seçilen öğe bir dosya değil.".into());
+    }
+    if bilgi.len() > KML_SINIRI {
+        return Err("Dosya içe aktarmak için fazla büyük (en çok 30 MB).".into());
+    }
+    fs::read(&yol).map_err(|e| format!("Dosya okunamadı: {e}"))
+}
+
+/// Kullanıcının seçtiği KML/KMZ dosyasını okur (arayüze ArrayBuffer olarak döner).
+#[tauri::command]
+pub async fn kml_dosyasi_oku(yol: String) -> Result<tauri::ipc::Response, String> {
+    let bayt = tauri::async_runtime::spawn_blocking(move || kml_baytlari(&yol))
+        .await
+        .map_err(|e| e.to_string())??;
+    Ok(tauri::ipc::Response::new(bayt))
+}
+
 #[cfg(test)]
 mod testler {
     use super::*;
@@ -312,6 +341,21 @@ mod testler {
         assert_eq!(guvenli_ad("COMPANY", "x"), "COMPANY");
         assert_eq!(guvenli_ad("   ", "Proje"), "Proje");
         assert_eq!(guvenli_ad("..\\..\\x", "Proje"), ".._.._x");
+    }
+
+    #[test]
+    fn kml_yalnizca_kml_ve_kmz_uzantisini_okur() {
+        let klasor = std::env::temp_dir().join(format!("paratoner-kml-{}", std::process::id()));
+        fs::create_dir_all(&klasor).unwrap();
+        let kml = klasor.join("Saha.KML");
+        fs::write(&kml, b"<kml/>").unwrap();
+        let txt = klasor.join("notlar.txt");
+        fs::write(&txt, b"x").unwrap();
+        assert_eq!(kml_baytlari(kml.to_str().unwrap()).unwrap(), b"<kml/>");
+        assert!(kml_baytlari(txt.to_str().unwrap()).is_err());
+        assert!(kml_baytlari("goreli/Saha.kml").is_err());
+        assert!(kml_baytlari(klasor.join("yok.kmz").to_str().unwrap()).is_err());
+        let _ = fs::remove_dir_all(&klasor);
     }
 
     #[test]

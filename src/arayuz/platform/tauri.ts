@@ -51,7 +51,7 @@ export function klasorAyikla(yol: string): string {
   return i >= 0 ? yol.slice(0, i + 1) : '';
 }
 
-function tarayicidaDosyaSec(kabul: string): Promise<File | null> {
+export function tarayicidaDosyaSec(kabul: string): Promise<File | null> {
   return new Promise((coz) => {
     const girdi = document.createElement('input');
     girdi.type = 'file';
@@ -82,6 +82,24 @@ export async function projeDosyasiSec(boyutSiniri: number): Promise<SecilenDosya
   if (!dosya) return null;
   if (dosya.size > boyutSiniri) throw new Error('Dosya bir proje dosyası için fazla büyük.');
   return { yol: null, ad: dosya.name, icerik: await dosya.text() };
+}
+
+/** İçe aktarılacak Google Earth dosyası (.kml / .kmz) için üst sınır (bayt). Rust'taki KML_SINIRI ile aynı. */
+export const KML_DOSYA_SINIRI = 30 * 1024 * 1024;
+
+/** KML ya da KMZ dosyası seçtirip ham baytlarını okur; iptalde null. */
+export async function kmlDosyasiSec(filtreAdi: string): Promise<{ ad: string; bayt: Uint8Array } | null> {
+  if (tauriMi()) {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const yol = await open({ multiple: false, directory: false, filters: [{ name: filtreAdi, extensions: ['kml', 'kmz'] }] });
+    if (typeof yol !== 'string') return null;
+    const veri = await invoke<ArrayBuffer>('kml_dosyasi_oku', { yol });
+    return { ad: dosyaAdiAyikla(yol), bayt: new Uint8Array(veri) };
+  }
+  const dosya = await tarayicidaDosyaSec('.kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz');
+  if (!dosya) return null;
+  if (dosya.size > KML_DOSYA_SINIRI) throw new Error('Dosya içe aktarmak için fazla büyük (en çok 30 MB).');
+  return { ad: dosya.name, bayt: new Uint8Array(await dosya.arrayBuffer()) };
 }
 
 export async function projeDosyasiOku(yol: string): Promise<string> {

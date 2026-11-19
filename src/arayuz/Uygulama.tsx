@@ -18,6 +18,8 @@ import { AyarlarPenceresi, type AyarSekmesi } from './pencereler/AyarlarPenceres
 import { HesapTablosu } from './pencereler/HesapTablosu';
 import { ParatonerFormu } from './pencereler/ParatonerFormu';
 import { RaporSihirbazi } from './pencereler/RaporSihirbazi';
+import { KmlIceAktarPenceresi } from './pencereler/KmlIceAktarPenceresi';
+import { useKmlIslemleri } from './durum/useKmlIslemleri';
 import { StreetViewPaneli } from './pencereler/StreetViewPaneli';
 import { HakkindaPenceresi } from './pencereler/HakkindaPenceresi';
 import { KosullarPenceresi } from './pencereler/KosullarPenceresi';
@@ -75,6 +77,7 @@ export function Uygulama() {
     haritaRef.current?.turkiye();
   }, [durumuSifirla]);
   const dosya = useDosyaIslemleri({ acildi, yeniBasladi });
+  const kml = useKmlIslemleri();
   const { kaydet, farkliKaydet, ac, yeni } = dosya;
 
   // Pencere başlığı: proje adı ve kaydedilmemiş değişiklik işareti (•).
@@ -193,6 +196,7 @@ export function Uygulama() {
       />
       <UstBar
         dosya={dosya}
+        kml={kml}
         git={(lat, lng) => haritaRef.current?.git(lat, lng)}
         merkez={() => haritaRef.current?.merkez() ?? null}
         hesapTablosuAc={() => setAcikPencere('hesap')}
@@ -305,6 +309,14 @@ export function Uygulama() {
       {acikPencere === 'ayarlar' && <AyarlarPenceresi kapat={() => setAcikPencere(null)} ilkSekme={ayarSekmesi} kurtarmaAc={dosya.kurtarmaAc} />}
       {acikPencere === 'hakkinda' && <HakkindaPenceresi kapat={() => setAcikPencere(null)} />}
       {acikPencere === 'kisayollar' && <KisayollarPenceresi kapat={() => setAcikPencere(null)} />}
+      {kml.onizleme && (
+        <KmlIceAktarPenceresi
+          belge={kml.onizleme.belge}
+          dosyaAdi={kml.onizleme.dosyaAdi}
+          kapat={kml.onizlemeKapat}
+          eklendi={() => setTimeout(() => haritaRef.current?.projeyeOdakla(), 100)}
+        />
+      )}
       {acilisNotu && <AcilisPenceresi not={acilisNotu} />}
       {ayarlar.kosullarKabul !== KOSUL_SURUMU && <KosullarPenceresi kabulEt={() => ayarGuncelle({ kosullarKabul: KOSUL_SURUMU })} />}
     </div>
