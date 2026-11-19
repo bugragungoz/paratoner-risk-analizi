@@ -33,6 +33,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.43.0",
     "pdfmake": "0.3.11",
+    "proj4": "2.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

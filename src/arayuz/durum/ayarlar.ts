@@ -1,5 +1,6 @@
 // Uygulama düzeyindeki ayarlar (projeden bağımsız; bu bilgisayarda saklanır).
 
+import { dilMi, type Dil } from '../../dil';
 import type { KatmanAdi } from '../harita/katmanlar';
 import type { OtomatikKayitKonumu } from '../platform/tauri';
 import { ornekProfiller, profilleriOku, type CProfili } from './cProfilleri';
@@ -34,6 +35,8 @@ export interface UygulamaAyarlari {
   cProfilleri: CProfili[];
   /** Kullanıcının onayladığı kullanım koşulları sürümü (yasal.ts KOSUL_SURUMU); onay yoksa null. */
   kosullarKabul: string | null;
+  /** Arayüz dili. */
+  dil: Dil;
 }
 
 const ANAHTAR = 'paratoner_ayarlar';
@@ -48,6 +51,7 @@ export const VARSAYILAN_AYARLAR: UygulamaAyarlari = {
   kapsamaGoster: true,
   cProfilleri: ornekProfiller(),
   kosullarKabul: null,
+  dil: 'tr',
 };
 
 const metinMi = (x: unknown): x is string => typeof x === 'string';
@@ -68,6 +72,7 @@ export function ayarlariYukle(): UygulamaAyarlari {
     ayarlar.muhendis = muhendisOku(kayit.muhendis);
     ayarlar.cProfilleri = profilleriOku(kayit.cProfilleri);
     ayarlar.kosullarKabul = metinMi(kayit.kosullarKabul) ? kayit.kosullarKabul : null;
+    ayarlar.dil = dilMi(kayit.dil) ? kayit.dil : 'tr';
     return ayarlar;
   } catch {
     return { ...VARSAYILAN_AYARLAR, cProfilleri: ornekProfiller() };

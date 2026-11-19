@@ -9,6 +9,9 @@
 //   M10 — paratoner yapı poligonunun içindeyse en yakın mesafe 0'dır.
 //   M13 — kot zinciri mikrometreye yuvarlanır: v5'te (0,3 + 2) − 0,3 = 1,9999999999999998 çıkıyordu.
 //         h yalnızca kayan nokta gürültüsü kadar, Rp ve marj en fazla enterpolasyon yuvarlaması (0,1 m) kadar değişir.
+//   M14 — çekirdek mesafe, alan ve kapsamayı elipsoit üzerinde hesaplar; v5 Dünya'yı küre kabul ediyordu.
+//         Karşılaştırma bu yüzden çekirdeğe eski küresel modeli (tests/veri/kureModeli.js) vererek yapılır;
+//         elipsoit modeli bağımsız-doğrulama ve koordinat testlerinde ayrıca doğrulanır.
 // Bunların dışındaki her fark "beklenmeyen" sayılır ve test başarısız olur.
 import { describe, test, expect } from 'vitest';
 import { booleanPointInPolygon, point } from '@turf/turf';
@@ -16,6 +19,7 @@ import { projeyiHesapla, raporOzeti, poligonaDonustur, gercekHHesapla } from '..
 import { projeHesapTablosuUret as referansTablo } from './referans-motor/calc/hesapTablosu';
 import { haritaKapsamaV5 } from './referans-motor/harita/kapsamaV5';
 import { kanitSenaryosu, rastgeleProje } from './veri/projeler';
+import { KURE_MODELI } from './veri/kureModeli';
 
 const RASTGELE_PROJE_SAYISI = 200;
 const tohumlar = Array.from({ length: RASTGELE_PROJE_SAYISI }, (_, i) => 1000 + i);
@@ -41,7 +45,7 @@ const v5Nihai = (y) =>
 
 function karsilastir(proje) {
   const eski = referansTablo(proje);
-  const yeni = projeyiHesapla(proje);
+  const yeni = projeyiHesapla(proje, KURE_MODELI);
   const farklar = { M3: 0, M4: 0, M5: 0, M10: 0, M13: 0 };
   const beklenmeyen = [];
   const not = (yapi, mesaj) => beklenmeyen.push(`${proje.id} / ${yapi}: ${mesaj}`);

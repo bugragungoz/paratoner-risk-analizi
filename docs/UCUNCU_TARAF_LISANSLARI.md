@@ -11,7 +11,7 @@ Notlar:
 - Çift ya da çok lisanslı Rust bileşenleri ("MIT OR Apache-2.0" gibi) sunulan seçeneklerden biriyle, varsa MIT koşullarıyla kullanılır.
 - Yazı tipleri (Geist, JetBrains Mono, Carlito) SIL Open Font License 1.1 altındadır.
 
-## JavaScript bileşenleri (233)
+## JavaScript bileşenleri (236)
 
 | Bileşen | Lisans |
 |---|---|
@@ -211,6 +211,7 @@ Notlar:
 | lie@3.3.0 | MIT |
 | linebreak@1.1.0 | MIT |
 | lucide-react@1.43.0 | ISC |
+| mgrs@1.0.0 | MIT |
 | minimalistic-assert@1.0.1 | ISC |
 | nanoid@5.1.16 | MIT |
 | pako@0.2.9 | MIT |
@@ -220,6 +221,7 @@ Notlar:
 | png-js@1.1.0 | MIT |
 | polyclip-ts@0.16.8 | MIT |
 | process-nextick-args@2.0.1 | MIT |
+| proj4@2.23.0 | MIT |
 | quickselect@1.1.1 | ISC |
 | quickselect@2.0.0 | ISC |
 | rbush@2.0.2 | MIT |
@@ -245,6 +247,7 @@ Notlar:
 | unicode-trie@2.0.0 | MIT |
 | util-deprecate@1.0.2 | MIT |
 | utrie@1.0.2 | MIT |
+| wkt-parser@1.9.0 | MIT |
 | xml-js@1.6.11 | MIT |
 | xml@1.0.1 | MIT |
 | xmldoc@2.0.3 | MIT |

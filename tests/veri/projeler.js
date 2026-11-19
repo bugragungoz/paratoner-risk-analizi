@@ -19,7 +19,10 @@ export function kanitSenaryosu({ deltaT, gizliParatonerler = [] } = {}) {
  */
 export function yerelProje({ Nk = 30, deltaT = 60, kotlar = [['kot_0', 0]], yapilar = [], paratonerler = [] } = {}) {
   const LAT0 = 39.9, LNG0 = 32.8;
-  const mLat = 111320, mLng = 111320 * Math.cos((LAT0 * Math.PI) / 180);
+  // Metre → derece: GRS80 elipsoidinin LAT0'daki eğrilik yarıçaplarıyla (çekirdek elipsoit üzerinde ölçer).
+  const a = 6378137, e2 = 0.00669438002290, rad = Math.PI / 180, s2 = Math.sin(LAT0 * rad) ** 2;
+  const mLat = ((a * (1 - e2)) / (1 - e2 * s2) ** 1.5) * rad;
+  const mLng = (a / Math.sqrt(1 - e2 * s2)) * Math.cos(LAT0 * rad) * rad;
   const nokta = (x, y) => ({ lat: LAT0 + y / mLat, lng: LNG0 + x / mLng });
   const C1 = { C1: 1, C2: 1, C3: 1, C4: 1, C5: 1 };
   return {

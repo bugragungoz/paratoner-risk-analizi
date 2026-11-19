@@ -5,7 +5,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import L from 'leaflet';
 import { bearing, booleanIntersects, centerOfMass, circle, destination, distance, point } from '@turf/turf';
-import { etkinDeltaT, haversineMesafe, poligonaDonustur, rpOku, sayi, type LatLng, type Proje, type ProjeSonucu, type Seviye } from '../../core';
+import { elipsoitMesafe, etkinDeltaT, poligonaDonustur, rpOku, sayi, type LatLng, type Proje, type ProjeSonucu, type Seviye } from '../../core';
 import { useProje } from '../durum/ProjeSaglayici';
 import { useEtkilesim } from '../ortak/Etkilesim';
 import { etkinKatman, karoAdresi, katmanTanimi } from './katmanlar';
@@ -359,7 +359,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
       if (n.length > 1) {
         L.polyline(n.map(ll), { color: RENK.olcum, weight: 2 }).addTo(k.olcum);
         let toplam = 0;
-        for (let i = 1; i < n.length; i++) toplam += haversineMesafe(n[i - 1]!.lat, n[i - 1]!.lng, n[i]!.lat, n[i]!.lng);
+        for (let i = 1; i < n.length; i++) toplam += elipsoitMesafe(n[i - 1]!, n[i]!);
         guncel.current.props.onOlcum(toplam);
       } else guncel.current.props.onOlcum(null);
     };

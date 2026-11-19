@@ -118,9 +118,10 @@ describe('M2 — ΔT seçilmeden hesap yok, sessiz 60 µs yok', () => {
     expect(hata.mesaj).not.toMatch(/P1/);
   });
 
-  test('kanıt senaryosu: ΔT 60 → kombine yeterli, ΔT 30 → kısmi (%77)', () => {
+  // M14: kapsama elipsoit üzerinde hesaplanınca oran %77,0'dan %76,8'e iner (küre doğu-batıyı kısa ölçüyordu).
+  test('kanıt senaryosu: ΔT 60 → kombine yeterli, ΔT 30 → kısmi (%76,8)', () => {
     expect(ckYapi(kanitSenaryosu({ deltaT: 60 }), 'Depo-B').nihai.kod).toBe('YETERLI_KOMBINE');
-    expect(ckYapi(kanitSenaryosu({ deltaT: 30 }), 'Depo-B').nihai.etiket).toBe('Kısmi koruma (%77): açıkta alan var');
+    expect(ckYapi(kanitSenaryosu({ deltaT: 30 }), 'Depo-B').nihai.etiket).toBe('Kısmi koruma (%76,8): açıkta alan var');
   });
 });
 

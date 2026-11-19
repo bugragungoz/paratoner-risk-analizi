@@ -16,7 +16,7 @@ import {
 } from './dogrulama';
 import { yuzde } from './bicim';
 import { RP_MESAJLARI, rpOku } from './ese';
-import { aeHesapla, paratonerYapiMesafeleri, yapiKapsamaAnalizi, type KapsamaAnalizi } from './geometri';
+import { aeHesapla, ELIPSOIT_MODELI, type GeometriModeli, type KapsamaAnalizi } from './geometri';
 import { gercekHHesapla } from './kot';
 import { yapiRiskAnalizi, type RiskAnalizi } from './risk';
 import type { Paratoner, Proje, Seviye, Yapi } from './tipler';
@@ -110,7 +110,7 @@ function gecersizSatir(pr: Paratoner, neden: string, gercekH?: number): Paratone
 }
 
 /** Bir paratoner–yapı çifti. Kontrol sırası v5 ile aynıdır. */
-function satirUret(pr: Paratoner, yapi: Yapi, proje: Proje, sutun: Seviye): ParatonerSatiri {
+function satirUret(pr: Paratoner, yapi: Yapi, proje: Proje, sutun: Seviye, model: GeometriModeli): ParatonerSatiri {
   const engel = paratonerSorunlari(pr, proje).find((s) => s.kod !== 'DELTA_T_GECERSIZ');
   const gercekH = gercekHHesapla(pr, yapi, proje);
   if (gercekH === null) return gecersizSatir(pr, NEDEN_KOT_EKSIK);
@@ -121,7 +121,7 @@ function satirUret(pr: Paratoner, yapi: Yapi, proje: Proje, sutun: Seviye): Para
   const okuma = rpOku(gercekH, sutun, deltaT);
   if (!okuma.tamam) return gecersizSatir(pr, okuma.mesaj, gercekH);
 
-  const mesafe = paratonerYapiMesafeleri(pr, yapi.poligon);
+  const mesafe = model.mesafeler(pr, yapi.poligon);
   if (!mesafe) return gecersizSatir(pr, 'Yapı poligonu geçersiz.', gercekH);
   const marjEnYakin = okuma.rp - mesafe.enYakin;
   const marjEnUzak = okuma.rp - mesafe.enUzak;
@@ -206,7 +206,12 @@ function hesaplanamadi(yapi: Yapi, hatalar: string[]): YapiSonucu {
   };
 }
 
-export function yapiyiHesapla(yapi: Yapi, proje: Proje, paratonerler: Paratoner[] = hesabaGirenParatonerler(proje)): YapiSonucu {
+export function yapiyiHesapla(
+  yapi: Yapi,
+  proje: Proje,
+  paratonerler: Paratoner[] = hesabaGirenParatonerler(proje),
+  model: GeometriModeli = ELIPSOIT_MODELI,
+): YapiSonucu {
   const hatalar = yapiSorunlari(yapi, proje).map((s) => s.mesaj);
   const deltaTsiz = deltaTsizParatonerler(proje, paratonerler);
   if (deltaTsiz.length) {
@@ -220,7 +225,7 @@ export function yapiyiHesapla(yapi: Yapi, proje: Proje, paratonerler: Paratoner[
   if (!nkGecerliMi(proje)) hatalar.unshift('Nk (yıldırımlı gün sayısı) girilmemiş.');
   if (hatalar.length) return hesaplanamadi(yapi, hatalar);
 
-  const { alan, cevre, Ae } = aeHesapla(yapi);
+  const { alan, cevre, Ae } = aeHesapla(yapi, model);
   const risk = yapiRiskAnalizi(
     { Ae, C1: yapi.C1 as number, C2: yapi.C2 as number, C3: yapi.C3 as number, C4: yapi.C4 as number, C5: yapi.C5 as number },
     proje.Nk,
@@ -228,7 +233,7 @@ export function yapiyiHesapla(yapi: Yapi, proje: Proje, paratonerler: Paratoner[
   if (!risk.sutun) return hesaplanamadi(yapi, ['Risk analizi geçersiz: Nd hesaplanamadı.']);
   const sutun = risk.sutun;
 
-  const satirlar = paratonerler.map((pr) => satirUret(pr, yapi, proje, sutun));
+  const satirlar = paratonerler.map((pr) => satirUret(pr, yapi, proje, sutun, model));
   const gecerliSatirlar = satirlar.filter((s) => s.gecerli);
   const birincil = birincilSec(satirlar);
 
@@ -236,7 +241,7 @@ export function yapiyiHesapla(yapi: Yapi, proje: Proje, paratonerler: Paratoner[
     const pr = paratonerler.find((p) => p.id === s.paratonerId) as Paratoner;
     return { merkez: { lat: pr.lat, lng: pr.lng }, yaricapM: s.rp as number };
   });
-  const kapsama = yapiKapsamaAnalizi(daireler, yapi.poligon);
+  const kapsama = model.kapsama(daireler, yapi.poligon);
   const nihai = nihaiBelirle(gecerliSatirlar, kapsama, risk);
 
   const uyarilar: string[] = [];
@@ -286,11 +291,11 @@ export function hesapGirdisiAyni(a: Proje, b: Proje): boolean {
   return true;
 }
 
-export function projeyiHesapla(proje: Proje): ProjeSonucu {
+export function projeyiHesapla(proje: Proje, model: GeometriModeli = ELIPSOIT_MODELI): ProjeSonucu {
   const paratonerler = hesabaGirenParatonerler(proje);
   return {
     dogrulama: projeyiDogrula(proje),
-    yapilar: proje.yapilar.map((yapi) => yapiyiHesapla(yapi, proje, paratonerler)),
+    yapilar: proje.yapilar.map((yapi) => yapiyiHesapla(yapi, proje, paratonerler, model)),
   };
 }
 

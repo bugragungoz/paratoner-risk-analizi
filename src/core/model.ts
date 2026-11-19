@@ -1,5 +1,6 @@
 // Yeni proje/öğe oluşturma ve girdi yardımcıları.
 
+import { yerelDuzlem } from './koordinat';
 import { c2Degeri } from './sabitler';
 import type { C2Secimi, KotSeviyesi, LatLng, Paratoner, Proje, Yapi } from './tipler';
 
@@ -64,16 +65,15 @@ export function yeniParatoner(g: YeniParatonerGirdisi): Paratoner {
   };
 }
 
-/** Poligonun kaba en/boy tahmini (bilgi amaçlı; Ae hesabı poligondan yapılır). */
+/** Poligonun kaba en/boy tahmini (bilgi amaçlı; Ae hesabı poligondan yapılır): kuzey-güney ve doğu-batı açıklığı. */
 export function poligondenLW(poligon: LatLng[]): { L: number; W: number } {
   if (!poligon || poligon.length < 3) return { L: 0, W: 0 };
   const lats = poligon.map((n) => n.lat);
   const lngs = poligon.map((n) => n.lng);
-  const latOrtalama = (Math.min(...lats) + Math.max(...lats)) / 2;
-  const metrePerDegLat = 111320;
-  const metrePerDegLng = 111320 * Math.cos((latOrtalama * Math.PI) / 180);
-  const L = (Math.max(...lats) - Math.min(...lats)) * metrePerDegLat;
-  const W = (Math.max(...lngs) - Math.min(...lngs)) * metrePerDegLng;
+  const merkez = { lat: (Math.min(...lats) + Math.max(...lats)) / 2, lng: (Math.min(...lngs) + Math.max(...lngs)) / 2 };
+  const d = yerelDuzlem(merkez);
+  const L = d.ileri({ lat: Math.max(...lats), lng: merkez.lng }).y - d.ileri({ lat: Math.min(...lats), lng: merkez.lng }).y;
+  const W = d.ileri({ lat: merkez.lat, lng: Math.max(...lngs) }).x - d.ileri({ lat: merkez.lat, lng: Math.min(...lngs) }).x;
   return { L: Math.round(L * 10) / 10, W: Math.round(W * 10) / 10 };
 }
 

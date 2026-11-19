@@ -7,6 +7,7 @@ export * from './ese';
 export * from './risk';
 export * from './kot';
 export * from './geometri';
+export * from './koordinat';
 export * from './dogrulama';
 export * from './hesap';
 export * from './rapor';

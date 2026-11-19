@@ -132,9 +132,12 @@ function duzlem(proje) {
   const tum = [...proje.yapilar.flatMap((y) => y.poligon), ...proje.paratonerler];
   const lat0 = tum.reduce((t, n) => t + n.lat, 0) / tum.length;
   const lng0 = tum.reduce((t, n) => t + n.lng, 0) / tum.length;
-  const R = 6371008.8;
-  const rad = Math.PI / 180;
-  return (n) => [(n.lng - lng0) * rad * R * Math.cos(lat0 * rad), (n.lat - lat0) * rad * R];
+  // GRS80 elipsoidinin bu enlemdeki eğrilik yarıçapları (meridyen M, birinci düşey N).
+  const a = 6378137, e2 = 0.00669438002290, rad = Math.PI / 180;
+  const s2 = Math.sin(lat0 * rad) ** 2;
+  const M = (a * (1 - e2)) / (1 - e2 * s2) ** 1.5;
+  const N = a / Math.sqrt(1 - e2 * s2);
+  return (n) => [(n.lng - lng0) * rad * N * Math.cos(lat0 * rad), (n.lat - lat0) * rad * M];
 }
 
 function icindeMi([x, y], kose) {

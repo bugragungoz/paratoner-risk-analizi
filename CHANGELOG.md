@@ -3,6 +3,16 @@
 Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; sürümler
 [anlamsal sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## Yayımlanmamış
+
+### Düzeltildi
+
+- **Hesap:** mesafe, alan ve kapsama elipsoit (GRS80) üzerinde, yapının yerel Transverse Mercator
+  düzleminde hesaplanıyor. Önceden Dünya küre kabul ediliyordu: doğu-batı yönündeki mesafeler
+  %0,26'ya kadar kısa (60 m'de yaklaşık 15 cm, güvensiz yönde), kuzey-güney yönündekiler %0,2'ye
+  kadar uzun ölçülüyordu. Sonuçlar santimetre düzeyinde değişir; 300 rastgele sahadaki 913 yapıdan
+  yalnızca birinin sonucu değişti. Haritadaki mesafe ölçümü de aynı modeli kullanır.
+
 ## 1.9.1 (2026-11-15)
 
 ### Düzeltildi
