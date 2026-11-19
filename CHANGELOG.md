@@ -12,6 +12,10 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; s
   %0,26'ya kadar kısa (60 m'de yaklaşık 15 cm, güvensiz yönde), kuzey-güney yönündekiler %0,2'ye
   kadar uzun ölçülüyordu. Sonuçlar santimetre düzeyinde değişir; 300 rastgele sahadaki 913 yapıdan
   yalnızca birinin sonucu değişti. Haritadaki mesafe ölçümü de aynı modeli kullanır.
+- **Hesap:** bir paratoner yapının bütün köşelerini kapsıyorsa yapı "koruma yeterli" sayılır.
+  Koruma dairesi kapsama hesabında 128 kenarlı iç teğet çokgenle temsil edildiği için, en uzak
+  köşesi dairenin birkaç santim içinde kalan bir yapı "kısmi koruma (%99,9)" görünebiliyordu;
+  hesap tablosunda aynı yapının paratoner satırı ise "yeterli" diyordu.
 
 ## 1.9.1 (2026-11-15)
 

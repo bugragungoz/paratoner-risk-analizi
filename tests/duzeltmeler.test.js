@@ -10,7 +10,7 @@ import { paratonerYapiMesafeleri as v5Mesafeler } from './referans-motor/calc/ge
 import { genelSonucOzeti as v5Ozet, yapiAciklamaParagrafi as v5Paragraf } from './referans-motor/report/raporIcerik';
 import { haritaKapsamaV5 } from './referans-motor/harita/kapsamaV5';
 import { STANDART_C } from './veri/kaynaklar';
-import { kanitSenaryosu, yerelProje } from './veri/projeler';
+import { kanitSenaryosu, rastgeleProje, yerelProje } from './veri/projeler';
 
 const ckYapi = (proje, isim) => ck.projeyiHesapla(proje).yapilar.find((y) => y.yapiIsim === isim);
 const v5Yapi = (proje, isim) => v5Tablo(proje).find((y) => y.yapiIsim === isim);
@@ -406,5 +406,57 @@ describe('hesaba girmeyen alanlar', () => {
     const s2 = hesapla({ ...p, rapor_no: 'R-2', deltaT: 30 });
     expect(s2).not.toBe(s1);
     expect(s2).toEqual(ck.projeyiHesapla({ ...p, deltaT: 30 }));
+  });
+});
+
+describe('M15 — tek paratoner bütün köşeleri kapsıyorsa yapı tamamen korunur', () => {
+  // Rastgele saha 176, Yapı-0: en uzak köşe P2'nin 88,8 m'lik dairesinin 2,8 mm içinde. Dairenin
+  // 128 kenarlı iç teğet çokgeni kenar ortalarında 2,7 cm içeride kaldığı için çokgen hesabı köşeyi
+  // dışarıda görüyor ve "kısmi koruma %99,9" diyordu; paratoner satırı ise "yeterli" diyordu.
+  const proje = rastgeleProje(176);
+  const yapi = proje.yapilar.find((y) => y.isim === 'Yapı-0');
+  const sonuc = ck.projeyiHesapla(proje).yapilar.find((y) => y.yapiId === yapi.id);
+  const satir = sonuc.satirlar.find((s) => s.gecerli && s.durumKod === 'YETERLI');
+
+  test('köşe dairenin milimetreler içinde; çokgen yaklaşımı tek başına "tam" demiyor', () => {
+    expect(satir.marjEnUzak).toBeGreaterThanOrEqual(0);
+    expect(satir.marjEnUzak).toBeLessThan(0.01);
+    const pr = proje.paratonerler.find((p) => p.id === satir.paratonerId);
+    const cokgen = ck.yapiKapsamaAnalizi([{ merkez: { lat: pr.lat, lng: pr.lng }, yaricapM: satir.rp }], yapi.poligon);
+    expect(cokgen.tamamenKorunuyorMu).toBe(false);
+  });
+
+  test('sonuç "koruma yeterli", kapsama %100, açıkta alan yok', () => {
+    expect(sonuc.nihai.kod).toBe('YETERLI');
+    expect(sonuc.kapsama.tamamenKorunuyorMu).toBe(true);
+    expect(sonuc.kapsama.kapsamaOrani).toBe(1);
+    expect(sonuc.kapsama.acikGeoJSON).toBeNull();
+  });
+
+  // Risk analizi korumayı gerektirsin (isteğe bağlı çıkmasın).
+  const KORUNMALI = { C1: 1, C2: 1, C3: 3, C4: 3, C5: 10 };
+
+  test('köşe dairenin 1 cm dışındaysa kural uygulanmaz', () => {
+    const p = yerelProje({
+      Nk: 30,
+      deltaT: 60,
+      yapilar: [{ id: 'y', dikdortgen: [10, -5, 20, 5], H: 5, C: KORUNMALI }],
+      paratonerler: [{ id: 'p', x: 0, y: 0, mast: 10 }],
+    });
+    const y0 = ck.projeyiHesapla(p).yapilar[0];
+    const rp = y0.satirlar[0].rp;
+    // En uzak köşe (20 + kayma, ±5): uzaklığı Rp + 1 cm olacak kadar doğuya kaydır.
+    const kayma = Math.sqrt((rp + 0.01) ** 2 - 5 ** 2) - 20;
+    const p2 = yerelProje({
+      Nk: 30,
+      deltaT: 60,
+      yapilar: [{ id: 'y', dikdortgen: [10 + kayma, -5, 20 + kayma, 5], H: 5, C: KORUNMALI }],
+      paratonerler: [{ id: 'p', x: 0, y: 0, mast: 10 }],
+    });
+    const y2 = ck.projeyiHesapla(p2).yapilar[0];
+    expect(y2.satirlar[0].marjEnUzak).toBeLessThan(0);
+    expect(y2.satirlar[0].marjEnUzak).toBeGreaterThan(-0.02);
+    expect(y2.kapsama.tamamenKorunuyorMu).toBe(false);
+    expect(y2.nihai.kod).toBe('KISMI');
   });
 });

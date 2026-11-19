@@ -16,7 +16,7 @@ import {
 } from './dogrulama';
 import { yuzde } from './bicim';
 import { RP_MESAJLARI, rpOku } from './ese';
-import { aeHesapla, ELIPSOIT_MODELI, type GeometriModeli, type KapsamaAnalizi } from './geometri';
+import { aeHesapla, ELIPSOIT_MODELI, tamKapsama, type GeometriModeli, type KapsamaAnalizi } from './geometri';
 import { gercekHHesapla } from './kot';
 import { yapiRiskAnalizi, type RiskAnalizi } from './risk';
 import type { Paratoner, Proje, Seviye, Yapi } from './tipler';
@@ -241,7 +241,12 @@ export function yapiyiHesapla(
     const pr = paratonerler.find((p) => p.id === s.paratonerId) as Paratoner;
     return { merkez: { lat: pr.lat, lng: pr.lng }, yaricapM: s.rp as number };
   });
-  const kapsama = model.kapsama(daireler, yapi.poligon);
+  let kapsama = model.kapsama(daireler, yapi.poligon);
+  // M15: bir paratoner yapının bütün köşelerini kapsıyorsa (satır "yeterli") yapı kesin olarak tamamen
+  // korunur; dairenin çokgen yaklaşımı köşe daireye birkaç santim yakınsa "kısmi %99,9" diyebiliyordu.
+  if (!kapsama.tamamenKorunuyorMu && !kapsama.geometriHatasi && gecerliSatirlar.some((s) => s.durumKod === 'YETERLI')) {
+    kapsama = tamKapsama(yapi.poligon);
+  }
   const nihai = nihaiBelirle(gecerliSatirlar, kapsama, risk);
 
   const uyarilar: string[] = [];

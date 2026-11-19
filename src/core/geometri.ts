@@ -268,6 +268,23 @@ export function yapiKapsamaAnalizi(daireler: KorumaDairesi[], poligon: LatLng[])
   };
 }
 
+/**
+ * Yapının tamamı tek bir koruma dairesinin içinde: bütün köşeleri dairenin içindeyse çokgenin
+ * tamamı da içindedir (daire dışbükeydir). Çokgen yaklaşımı (iç teğet 128-gen, kenar ortalarında
+ * yarıçapın ~%0,03'ü kadar içeride) bu durumu köşe daireye çok yakınsa kaçırabildiği için hesap
+ * motoru bu kesin sonucu kullanır (M15).
+ */
+export function tamKapsama(poligon: LatLng[]): KapsamaAnalizi {
+  return {
+    kapsananGeoJSON: poligonaDonustur(poligon),
+    acikGeoJSON: null,
+    tamamenKorunuyorMu: true,
+    hicKorumaYokMu: false,
+    kapsamaOrani: 1,
+    geometriHatasi: false,
+  };
+}
+
 // ---------------------------------------------------------------- Model
 
 /** Hesap motorunun kullandığı metrik işlemler. */

@@ -12,6 +12,8 @@
 //   M14 — çekirdek mesafe, alan ve kapsamayı elipsoit üzerinde hesaplar; v5 Dünya'yı küre kabul ediyordu.
 //         Karşılaştırma bu yüzden çekirdeğe eski küresel modeli (tests/veri/kureModeli.js) vererek yapılır;
 //         elipsoit modeli bağımsız-doğrulama ve koordinat testlerinde ayrıca doğrulanır.
+//   M15 — bir paratoner yapının bütün köşelerini kapsıyorsa (satır "yeterli") yapı tamamen korunur;
+//         v5 dairenin çokgen yaklaşımı yüzünden böyle bir yapıya "kısmi koruma" diyebiliyordu.
 // Bunların dışındaki her fark "beklenmeyen" sayılır ve test başarısız olur.
 import { describe, test, expect } from 'vitest';
 import { booleanPointInPolygon, point } from '@turf/turf';
@@ -46,7 +48,7 @@ const v5Nihai = (y) =>
 function karsilastir(proje) {
   const eski = referansTablo(proje);
   const yeni = projeyiHesapla(proje, KURE_MODELI);
-  const farklar = { M3: 0, M4: 0, M5: 0, M10: 0, M13: 0 };
+  const farklar = { M3: 0, M4: 0, M5: 0, M10: 0, M13: 0, M15: 0 };
   const beklenmeyen = [];
   const not = (yapi, mesaj) => beklenmeyen.push(`${proje.id} / ${yapi}: ${mesaj}`);
 
@@ -61,7 +63,11 @@ function karsilastir(proje) {
       const yeniDeger = k === 'seviye' ? v5Seviye(y.risk?.[k]) : y.risk?.[k];
       if (e[k] !== yeniDeger) not(e.yapiIsim, `risk.${k}: ${e[k]} ≠ ${yeniDeger}`);
     }
-    if (e.nihaiDurum !== v5Nihai(y)) not(e.yapiIsim, `nihai: "${e.nihaiDurum}" ≠ "${v5Nihai(y)}"`);
+    const tekDaireKapsiyor = y.satirlar.some((s) => s.gecerli && s.durumKod === 'YETERLI');
+    if (e.nihaiDurum !== v5Nihai(y)) {
+      if (tekDaireKapsiyor && e.nihaiDurum.includes('KISMİ') && y.nihai.kod === 'YETERLI') farklar.M15++;
+      else not(e.yapiIsim, `nihai: "${e.nihaiDurum}" ≠ "${v5Nihai(y)}"`);
+    }
     if (e.satirlar.length !== y.satirlar.length) return not(e.yapiIsim, 'satır sayısı farklı');
 
     e.satirlar.forEach((es, j) => {
@@ -108,8 +114,10 @@ function karsilastir(proje) {
       return h !== null && h > 0 && h < 2;
     });
     const gizliVar = proje.paratonerler.some((p) => p.gorunur_mu === false);
+    const tekDaire = y.satirlar.some((s) => s.gecerli && s.durumKod === 'YETERLI');
     if (kisaVar) farklar.M3++;
     else if (gizliVar) farklar.M4++;
+    else if (tekDaire && y.kapsama.tamamenKorunuyorMu) farklar.M15++;
     else not(yapi.isim, 'v5 haritası ile çekirdek kapsaması açıklanamayan biçimde farklı');
   }
 
