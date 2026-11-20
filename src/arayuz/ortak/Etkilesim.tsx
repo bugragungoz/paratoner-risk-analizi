@@ -34,7 +34,26 @@ interface Bildirim {
   metin: string;
 }
 
+/** Onay pencerelerinin varsayılan düğmeleri ve genel metinler (dil değişince ProjeSaglayici günceller). */
+export interface EtkilesimEtiketleri {
+  vazgec: string;
+  tamam: string;
+  onayla: string;
+  kapat: string;
+  beklenmeyenHata: (hata: string) => string;
+}
+
+const TR_ETIKETLER: EtkilesimEtiketleri = {
+  vazgec: 'Vazgeç',
+  tamam: 'Tamam',
+  onayla: 'Onayla',
+  kapat: 'Kapat (Esc)',
+  beklenmeyenHata: (hata) => `Beklenmeyen hata: ${hata}`,
+};
+
 interface EtkilesimBaglami {
+  etiketler: EtkilesimEtiketleri;
+  etiketleriAyarla: (e: EtkilesimEtiketleri) => void;
   onayla: (s: OnaySecenekleri) => Promise<boolean>;
   /** Birden fazla seçenekli soru; vazgeçilirse null. */
   sec: <T extends string>(s: SecimIstegi<T>) => Promise<T | null>;
@@ -67,6 +86,7 @@ export function EtkilesimSaglayici({ children }: { children: ReactNode }) {
   const cozucu = useRef<((sonuc: string | null) => void) | null>(null);
   const [bildirimler, setBildirimler] = useState<Bildirim[]>([]);
   const sayac = useRef(0);
+  const [etiketler, etiketleriAyarla] = useState<EtkilesimEtiketleri>(TR_ETIKETLER);
 
   const ac = useCallback((s: AcikIstek) => {
     cozucu.current?.(null);
@@ -78,8 +98,8 @@ export function EtkilesimSaglayici({ children }: { children: ReactNode }) {
 
   const sec = useCallback(
     <T extends string>(s: SecimIstegi<T>) =>
-      ac({ baslik: s.baslik, aciklama: s.aciklama, secenekler: s.secenekler, vazgecEtiketi: s.vazgecEtiketi ?? 'Vazgeç' }) as Promise<T | null>,
-    [ac],
+      ac({ baslik: s.baslik, aciklama: s.aciklama, secenekler: s.secenekler, vazgecEtiketi: s.vazgecEtiketi ?? etiketler.vazgec }) as Promise<T | null>,
+    [ac, etiketler],
   );
 
   const onayla = useCallback(
@@ -87,12 +107,12 @@ export function EtkilesimSaglayici({ children }: { children: ReactNode }) {
       const sonuc = await ac({
         baslik: s.baslik,
         aciklama: s.aciklama,
-        secenekler: [{ deger: 'evet', etiket: s.onayEtiketi ?? (s.yalnizBilgi ? 'Tamam' : 'Onayla'), tur: s.tehlikeli ? 'tehlikeli' : 'birincil' }],
-        vazgecEtiketi: s.yalnizBilgi ? null : (s.vazgecEtiketi ?? 'Vazgeç'),
+        secenekler: [{ deger: 'evet', etiket: s.onayEtiketi ?? (s.yalnizBilgi ? etiketler.tamam : etiketler.onayla), tur: s.tehlikeli ? 'tehlikeli' : 'birincil' }],
+        vazgecEtiketi: s.yalnizBilgi ? null : (s.vazgecEtiketi ?? etiketler.vazgec),
       });
       return sonuc === 'evet';
     },
-    [ac],
+    [ac, etiketler],
   );
 
   const bitir = (sonuc: string | null) => {
@@ -112,13 +132,13 @@ export function EtkilesimSaglayici({ children }: { children: ReactNode }) {
   useEffect(() => {
     const yakala = (e: PromiseRejectionEvent) => {
       const r: unknown = e.reason;
-      bildir(`Beklenmeyen hata: ${r instanceof Error ? r.message : String(r)}`, 'hata');
+      bildir(etiketler.beklenmeyenHata(r instanceof Error ? r.message : String(r)), 'hata');
     };
     window.addEventListener('unhandledrejection', yakala);
     return () => window.removeEventListener('unhandledrejection', yakala);
-  }, [bildir]);
+  }, [bildir, etiketler]);
 
-  const deger = useMemo(() => ({ onayla, sec, bildir }), [onayla, sec, bildir]);
+  const deger = useMemo(() => ({ etiketler, etiketleriAyarla, onayla, sec, bildir }), [etiketler, onayla, sec, bildir]);
 
   return (
     <Baglam.Provider value={deger}>

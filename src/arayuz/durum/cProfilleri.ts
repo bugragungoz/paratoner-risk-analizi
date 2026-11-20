@@ -5,7 +5,9 @@
 // seçilir" demektir: profil uygulandığında o katsayıya dokunulmaz. C1 (çevre) yapının türüne değil
 // sahadaki konumuna bağlı olduğundan örnek profillerde boş bırakılmıştır.
 
-import { MALZEMELER, YAPI_TIPLERI, standartCMi, type C2Secimi, type Malzeme } from '../../core';
+import { MALZEMELER, standartCMi, yapiTipleri, type C2Secimi, type Malzeme } from '../../core';
+import type { Metinler } from '../../dil';
+import { tr as TR } from '../../dil/tr';
 
 export interface CProfili {
   id: string;
@@ -28,13 +30,13 @@ export function yeniProfilKimligi(): string {
   return `prf_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function bosProfil(ad = 'Yeni profil'): CProfili {
+export function bosProfil(ad: string = TR.cProfil.yeniProfil): CProfili {
   return { id: yeniProfilKimligi(), ad, C1: null, C2_secim: null, C3: null, C4: null, C5: null };
 }
 
-/** İlk kurulumdaki örnek profiller. Başlangıç noktasıdır; kullanıcı kendi uygulamasına göre düzenler. */
-export function ornekProfiller(): CProfili[] {
-  return YAPI_TIPLERI.filter((t) => t.deger !== 'diger').map((t) => ({
+/** İlk kurulumdaki örnek profiller (adları `m` dilinde). Başlangıç noktasıdır; kullanıcı kendi uygulamasına göre düzenler. */
+export function ornekProfiller(m: Metinler = TR): CProfili[] {
+  return yapiTipleri(m).filter((t) => t.deger !== 'diger').map((t) => ({
     id: `ornek_${t.deger}`,
     ad: t.etiket,
     C1: null,
@@ -69,8 +71,8 @@ function profilOku(x: unknown, sira: number): CProfili | null {
  * Kayıtlı profilleri okur. Kayıt hiç yoksa örnek profiller döner; kullanıcı hepsini sildiyse boş
  * liste korunur. Standart dışı değerler ve bozuk kayıtlar atılır, kimlikler tekilleştirilir.
  */
-export function profilleriOku(kayit: unknown): CProfili[] {
-  if (!Array.isArray(kayit)) return ornekProfiller();
+export function profilleriOku(kayit: unknown, m: Metinler = TR): CProfili[] {
+  if (!Array.isArray(kayit)) return ornekProfiller(m);
   const gorulen = new Set<string>();
   const profiller: CProfili[] = [];
   kayit.slice(0, PROFIL_SAYISI_SINIRI).forEach((x, i) => {
@@ -105,8 +107,8 @@ export function tanimliKatsayiSayisi(p: CProfili): number {
  * Yapının kayıtlı tipinden profil adı. Eski projelerde tip, yerleşik bir anahtardır ("kumes");
  * yeni kayıtlarda doğrudan profilin adıdır. "diger" ve boş değer "profil yok" demektir.
  */
-export function tiptenProfilAdi(tip: string | undefined | null): string {
+export function tiptenProfilAdi(tip: string | undefined | null, m: Metinler = TR): string {
   const t = (tip ?? '').trim();
   if (!t || t === 'diger') return '';
-  return YAPI_TIPLERI.find((x) => x.deger === t)?.etiket ?? t;
+  return yapiTipleri(m).find((x) => x.deger === t)?.etiket ?? t;
 }

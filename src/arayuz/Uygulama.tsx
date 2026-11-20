@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { cizimKoordinati, ikiNoktaHizala, projeOrtasi, sayi, type LatLng, type Paratoner, type Seviye, type XY, type Yapi } from '../core';
+import { cizimKoordinati, HizalamaHatasi, ikiNoktaHizala, projeOrtasi, type LatLng, type Paratoner, type Seviye, type XY, type Yapi } from '../core';
 import { paratonerEkle, paratonerGuncelle, paratonerTasi, parselAyarla, poligonGuncelle, yapiEkle, yapiGuncelle } from './durum/eylemler';
 import { useProje } from './durum/ProjeSaglayici';
 import { useDosyaIslemleri } from './durum/useDosyaIslemleri';
@@ -123,12 +123,12 @@ export function Uygulama() {
     try {
       const s = ikiNoktaHizala(hizalama.cizim[0]!, hizalama.cizim[1]!, harita[0]!, harita[1]!, a.birim, hizalama.serbest);
       altlik.degistir({ hizalama: s.hizalama }, 'altlik-hizala');
-      const fark = `%${(Math.abs(s.olcekOrani - 1) * 100).toFixed(2).replace('.', ',')}`;
-      const aci = s.hizalama.tur === 'benzerlik' ? ((s.hizalama.aci * 180) / Math.PI).toFixed(2).replace('.', ',') : '0';
+      const fark = m.cizim.yuzde(m.bicim.sayi(Math.abs(s.olcekOrani - 1) * 100, 2));
+      const aci = s.hizalama.tur === 'benzerlik' ? m.bicim.sayi((s.hizalama.aci * 180) / Math.PI, 2) : '0';
       bildir(m.altlik.hizalandi(aci, fark), 'basari');
       if (Math.abs(s.olcekOrani - 1) > 0.01) bildir(m.altlik.olcekUyarisi(fark), 'hata');
     } catch (e) {
-      bildir(m.altlik.hizalanamadi(e instanceof Error ? e.message : String(e)), 'hata');
+      bildir(m.altlik.hizalanamadi(e instanceof HizalamaHatasi ? m.altlik.ayniNokta : e instanceof Error ? e.message : String(e)), 'hata');
     }
     setMod('yok');
   };
@@ -136,8 +136,8 @@ export function Uygulama() {
 
   // Pencere başlığı: proje adı ve kaydedilmemiş değişiklik işareti (•).
   useEffect(() => {
-    pencere.baslikAyarla(`${kaydedilmemis ? '• ' : ''}${proje.isim || 'Proje'} — Paratoner Risk Analizi`).catch(() => {});
-  }, [proje.isim, kaydedilmemis]);
+    pencere.baslikAyarla(m.genel.pencereBasligi(proje.isim || m.genel.projeVarsayilanAdi, kaydedilmemis)).catch(() => {});
+  }, [proje.isim, kaydedilmemis, m]);
 
   // Masaüstünde pencere kapatılırken kaydedilmemiş değişiklik sorulur.
   // Proje dosyasına çift tıklanarak açıldıysa ya da açıkken başka bir dosyaya çift tıklandıysa.
@@ -181,14 +181,14 @@ export function Uygulama() {
   }, []);
 
   const modSec = useCallback(
-    async (m: CizimModu) => {
-      if (m === 'yapi' && proje.kot_seviyeleri.length === 0) {
-        await onayla({ baslik: 'Önce kot seviyesi', aciklama: 'Yapı çizmeden önce sol panelden en az bir kot seviyesi (ör. "Zemin, 0 m") tanımlayın.', yalnizBilgi: true });
+    async (yeniMod: CizimModu) => {
+      if (yeniMod === 'yapi' && proje.kot_seviyeleri.length === 0) {
+        await onayla({ baslik: m.cizim.onceKot, aciklama: m.cizim.onceKotAciklama, yalnizBilgi: true });
         return;
       }
-      setMod((mevcut) => (mevcut === m ? 'yok' : m));
+      setMod((mevcut) => (mevcut === yeniMod ? 'yok' : yeniMod));
     },
-    [proje.kot_seviyeleri.length, onayla],
+    [proje.kot_seviyeleri.length, onayla, m],
   );
 
   // Genel klavye kısayolları. Çizim modlarında Ctrl+Z haritaya aittir (son noktayı geri alır).
@@ -303,7 +303,7 @@ export function Uygulama() {
             onPoligonGuncelle={(id, poligon) => guncelle(poligonGuncelle(id, poligon))}
           />
           <Lejant gorunum={gorunum} />
-          {olcum !== null && <div className="olcut-sonuc">Toplam mesafe: {sayi(olcum)} m</div>}
+          {olcum !== null && <div className="olcut-sonuc">{m.cizim.toplamMesafe(m.bicim.sayi(olcum))}</div>}
           {mod === 'altlik' && hizalama && (
             <div className="olcut-sonuc">
               {m.altlik.adimlar[hizalama.cizim.length + hizalama.harita.length]} · {m.altlik.vazgec}
@@ -311,9 +311,9 @@ export function Uygulama() {
           )}
           {poligonDuzenlenen && (
             <div className="olcut-sonuc">
-              Poligon köşelerini sürükleyerek düzenleyin.
+              {m.cizim.poligonDuzenle}
               <button className="mini-buton sol-bosluk" onClick={poligonDuzenlemeBitir}>
-                Bitir
+                {m.cizim.bitir}
               </button>
             </div>
           )}

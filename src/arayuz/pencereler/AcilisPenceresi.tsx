@@ -5,14 +5,17 @@ import { deltaTAyarla } from '../durum/eylemler';
 import { useProje, type AcilisNotu } from '../durum/ProjeSaglayici';
 import { Pencere } from '../ortak/Pencere';
 import { DeltaTSecici } from '../paneller/ProjeParametreleriPaneli';
+import { useMetinler } from '../ortak/useMetinler';
 
 export function AcilisPenceresi({ not }: { not: AcilisNotu }) {
   const { proje, guncelle, acilisNotuKapat } = useProje();
   const [secilen, setSecilen] = useState<number | null>(null);
+  const m = useMetinler();
+  const t = m.acilis;
   const onayBekliyor = not.deltaTOnayi && !!proje.deltaT_onay_gerekli;
 
   return (
-    <Pencere acik kapat={acilisNotuKapat} baslik={onayBekliyor ? 'ΔT onayı gerekiyor' : 'Proje hakkında'}>
+    <Pencere acik kapat={acilisNotuKapat} baslik={onayBekliyor ? t.deltaTBaslik : t.baslik}>
       <div className="form-dikey">
         <ul className="acilis-uyarilari">
           {not.uyarilar.map((u) => (
@@ -23,10 +26,10 @@ export function AcilisPenceresi({ not }: { not: AcilisNotu }) {
         {onayBekliyor && (
           <div className="deltat-onay">
             <label htmlFor="acilis-deltat">
-              Paratoner yayılım süresi (ΔT) — eski kayıtta görünen değer: <b>{proje.deltaT ?? '—'} µs</b>
+              {t.deltaTEtiket} <b>{proje.deltaT ?? '—'} µs</b>
             </label>
             <DeltaTSecici id="acilis-deltat" deger={secilen} degisti={setSecilen} />
-            <p className="ipucu-kucuk">Kullandığınız paratonerin belgesindeki (test raporu / katalog) ΔT değerini seçin. Değer, projenin bütün paratonerlerinde kullanılır.</p>
+            <p className="ipucu-kucuk">{t.deltaTNotu}</p>
           </div>
         )}
 
@@ -34,7 +37,7 @@ export function AcilisPenceresi({ not }: { not: AcilisNotu }) {
           {onayBekliyor ? (
             <>
               <button className="ikincil-buton" onClick={acilisNotuKapat}>
-                Sonra
+                {t.sonra}
               </button>
               <button
                 className="buton-birincil"
@@ -44,12 +47,12 @@ export function AcilisPenceresi({ not }: { not: AcilisNotu }) {
                   acilisNotuKapat();
                 }}
               >
-                ΔT'yi onayla
+                {t.onayla}
               </button>
             </>
           ) : (
             <button className="buton-birincil" onClick={acilisNotuKapat}>
-              Tamam
+              {m.ortak.tamam}
             </button>
           )}
         </div>

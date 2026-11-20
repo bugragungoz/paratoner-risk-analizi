@@ -6,7 +6,7 @@ import { projeAdi } from '../durum/eylemler';
 import { useProje } from '../durum/ProjeSaglayici';
 import type { DosyaIslemleri } from '../durum/useDosyaIslemleri';
 import type { KmlIslemleri } from '../durum/useKmlIslemleri';
-import { KATMAN_ADLARI, KATMANLAR, etkinKatman, katmanKullanilabilir, type KatmanAdi } from '../harita/katmanlar';
+import { KATMAN_ADLARI, etkinKatman, katmanKullanilabilir, type KatmanAdi } from '../harita/katmanlar';
 import type { AyarSekmesi } from '../pencereler/AyarlarPenceresi';
 import { useMetinler } from '../ortak/useMetinler';
 import { disBaglantiAc, tauriMi } from '../platform/tauri';
@@ -28,11 +28,12 @@ interface Props {
   hakkindaAc: () => void;
 }
 
-const tarih = (ms: number) => new Date(ms).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const tarih = (ms: number, yerel: string) => new Date(ms).toLocaleString(yerel, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 /** Yardım: kısayollar, harita servisleri kılavuzu, kaynak kod, hakkında. */
 function YardimMenusu({ kisayollarAc, hakkindaAc, ayarlarAc }: { kisayollarAc: () => void; hakkindaAc: () => void; ayarlarAc: (sekme?: AyarSekmesi) => void }) {
   const [acik, setAcik] = useState(false);
+  const t = useMetinler().ust;
   const yap = (fn: () => void) => () => {
     setAcik(false);
     fn();
@@ -40,24 +41,24 @@ function YardimMenusu({ kisayollarAc, hakkindaAc, ayarlarAc }: { kisayollarAc: (
   return (
     <PopoverPrimitive.Root open={acik} onOpenChange={setAcik}>
       <PopoverPrimitive.Trigger asChild>
-        <button className="ikon-kare" title="Yardım" aria-label="Yardım">
+        <button className="ikon-kare" title={t.yardim} aria-label={t.yardim}>
           <CircleHelp size={15} />
         </button>
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content className="dosya-menusu" align="end" sideOffset={6} role="menu">
           <button role="menuitem" onClick={yap(kisayollarAc)}>
-            Klavye kısayolları <kbd>F1</kbd>
+            {t.kisayollar} <kbd>F1</kbd>
           </button>
           <button role="menuitem" onClick={yap(() => ayarlarAc('harita'))}>
-            Harita servisleri kurulum kılavuzu
+            {t.kilavuz}
           </button>
           <hr />
           <button role="menuitem" onClick={yap(() => disBaglantiAc('https://github.com/bugragungoz/paratoner-risk-analizi'))}>
-            Kaynak kod ve sorun bildirimi
+            {t.kaynak}
           </button>
           <button role="menuitem" onClick={yap(hakkindaAc)}>
-            Hakkında
+            {t.hakkinda}
           </button>
         </PopoverPrimitive.Content>
       </PopoverPrimitive.Portal>
@@ -81,6 +82,7 @@ function DosyaMenusu({
 }) {
   const { sonDosyalar } = useProje();
   const m = useMetinler();
+  const t = m.ust;
   const [acik, setAcik] = useState(false);
   const masaustu = tauriMi();
   const yap = (fn: () => void) => () => {
@@ -90,20 +92,20 @@ function DosyaMenusu({
   return (
     <PopoverPrimitive.Root open={acik} onOpenChange={setAcik}>
       <PopoverPrimitive.Trigger asChild>
-        <button className="ikon-kare" title="Diğer dosya işlemleri" aria-label="Diğer dosya işlemleri">
+        <button className="ikon-kare" title={t.digerDosya} aria-label={t.digerDosya}>
           <ChevronDown size={14} />
         </button>
       </PopoverPrimitive.Trigger>
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content className="dosya-menusu" align="start" sideOffset={6} role="menu">
           <button role="menuitem" onClick={yap(() => dosya.yeni())}>
-            Yeni proje <kbd>Ctrl+N</kbd>
+            {t.yeniProje} <kbd>Ctrl+N</kbd>
           </button>
           <button role="menuitem" onClick={yap(() => dosya.farkliKaydet())}>
-            Farklı kaydet… <kbd>Ctrl+Shift+S</kbd>
+            {t.farkliKaydet} <kbd>Ctrl+Shift+S</kbd>
           </button>
           <button role="menuitem" onClick={yap(() => dosya.ac())}>
-            Dosyadan aç… <kbd>Ctrl+O</kbd>
+            {t.dosyadanAc} <kbd>Ctrl+O</kbd>
           </button>
           <hr />
           <button role="menuitem" onClick={yap(() => kml.iceAktar())}>
@@ -121,17 +123,17 @@ function DosyaMenusu({
           {masaustu && (
             <>
               <hr />
-              <div className="dosya-menusu-baslik">Son dosyalar</div>
-              {sonDosyalar.length === 0 && <div className="dosya-menusu-bos">Henüz yok</div>}
+              <div className="dosya-menusu-baslik">{t.sonDosyalar}</div>
+              {sonDosyalar.length === 0 && <div className="dosya-menusu-bos">{t.henuzYok}</div>}
               {sonDosyalar.map((d) => (
                 <button key={d.yol} role="menuitem" className="son-dosya" title={d.yol} onClick={yap(() => dosya.sonDosyaAc(d.yol))}>
                   <span className="son-dosya-ad">{d.ad}</span>
-                  <span className="son-dosya-tarih">{tarih(d.zaman)}</span>
+                  <span className="son-dosya-tarih">{tarih(d.zaman, m.bicim.yerel)}</span>
                 </button>
               ))}
               <hr />
               <button role="menuitem" onClick={yap(() => ayarlarAc('uygulama'))}>
-                Otomatik kayıtlar ve yedekler…
+                {t.otomatikKayitlar}
               </button>
             </>
           )}
@@ -143,60 +145,62 @@ function DosyaMenusu({
 
 export function UstBar(p: Props) {
   const { proje, guncelle, geriAl, yinele, geriAlinabilir, yinelenebilir, ayarlar, ayarGuncelle, kaydedilmemis, dosyaYolu, dosyaAdi, haritaAnahtarlari } = useProje();
+  const m = useMetinler();
+  const t = m.ust;
 
   return (
     <header className="ustbar">
       <div className="ustbar-sol">
-        <button onClick={() => p.dosya.ac()} title="Proje dosyası aç (Ctrl+O)">
-          <FolderOpen size={14} /> Aç
+        <button onClick={() => p.dosya.ac()} title={t.acIpucu}>
+          <FolderOpen size={14} /> {t.ac}
         </button>
-        <button onClick={() => p.dosya.kaydet()} title={dosyaYolu ? `Kaydet: ${dosyaYolu} (Ctrl+S)` : 'Projeyi kaydet (Ctrl+S)'}>
-          <Save size={14} /> Kaydet
+        <button onClick={() => p.dosya.kaydet()} title={dosyaYolu ? t.kaydetYol(dosyaYolu) : t.kaydetIpucu}>
+          <Save size={14} /> {t.kaydet}
         </button>
         <DosyaMenusu dosya={p.dosya} kml={p.kml} dxfAc={p.dxfAc} altlikEkle={p.altlikEkle} ayarlarAc={p.ayarlarAc} />
         <span className="ayirac" />
         <HesapDurumu />
-        <button onClick={geriAl} disabled={!geriAlinabilir} title="Geri al (Ctrl+Z)" className="ikon-kare">
+        <button onClick={geriAl} disabled={!geriAlinabilir} title={t.geriAl} className="ikon-kare">
           <Undo2 size={14} />
         </button>
-        <button onClick={yinele} disabled={!yinelenebilir} title="Yinele (Ctrl+Y)" className="ikon-kare">
+        <button onClick={yinele} disabled={!yinelenebilir} title={t.yinele} className="ikon-kare">
           <Redo2 size={14} />
         </button>
       </div>
 
       <div className="ustbar-orta">
-        <input className="proje-adi-input" value={proje.isim} onChange={(e) => guncelle(projeAdi(e.target.value), 'proje-adi')} aria-label="Proje adı" />
+        <input className="proje-adi-input" value={proje.isim} onChange={(e) => guncelle(projeAdi(e.target.value), 'proje-adi')} aria-label={t.projeAdi} />
         <span
           className={kaydedilmemis ? 'kayit-durumu kaydedilmemis' : 'kayit-durumu'}
-          title={dosyaYolu ?? (dosyaAdi ? `${dosyaAdi} (Kaydet yeni bir .ptproj dosyası ister)` : 'Henüz bir dosyaya kaydedilmedi')}
+          title={dosyaYolu ?? (dosyaAdi ? t.yeniDosyaIster(dosyaAdi) : t.dosyayaKaydedilmedi)}
         >
-          {kaydedilmemis ? 'Kaydedilmedi' : 'Kaydedildi'}
+          {kaydedilmemis ? t.kaydedilmedi : t.kaydedildi}
         </span>
       </div>
 
       <div className="ustbar-butonlar">
         <AramaKutusu git={p.git} merkez={p.merkez} />
-        <select value={etkinKatman(ayarlar.katman, haritaAnahtarlari)} onChange={(e) => ayarGuncelle({ katman: e.target.value as KatmanAdi })} aria-label="Harita katmanı">
+        <select value={etkinKatman(ayarlar.katman, haritaAnahtarlari)} onChange={(e) => ayarGuncelle({ katman: e.target.value as KatmanAdi })} aria-label={t.katman}>
           {KATMAN_ADLARI.map((k) => (
             <option key={k} value={k} disabled={!katmanKullanilabilir(k, haritaAnahtarlari)}>
-              {KATMANLAR[k].isim}
-              {katmanKullanilabilir(k, haritaAnahtarlari) ? '' : ' (anahtar gerekli)'}
+              {m.katman[k]}
+              {katmanKullanilabilir(k, haritaAnahtarlari) ? '' : t.anahtarGerekli}
             </option>
           ))}
         </select>
-        <button onClick={p.hesapTablosuAc} title="Ayrıntılı hesap" aria-label="Ayrıntılı hesap">
-          <Table2 size={14} /> <span className="etiket-metni">Ayrıntılı hesap</span>
+        <button onClick={p.hesapTablosuAc} title={t.ayrintiliHesap} aria-label={t.ayrintiliHesap}>
+          <Table2 size={14} /> <span className="etiket-metni">{t.ayrintiliHesap}</span>
         </button>
-        <button onClick={p.raporAc} title="Rapor" aria-label="Rapor">
-          <FileText size={14} /> <span className="etiket-metni">Rapor</span>
+        <button onClick={p.raporAc} title={t.rapor} aria-label={t.rapor}>
+          <FileText size={14} /> <span className="etiket-metni">{t.rapor}</span>
         </button>
-        <button className="ikon-kare" onClick={() => p.ayarlarAc()} title="Ayarlar">
+        <button className="ikon-kare" onClick={() => p.ayarlarAc()} title={t.ayarlar}>
           <Settings size={15} />
         </button>
-        <button className="ikon-kare" onClick={() => ayarGuncelle({ tema: etkinTema(ayarlar.tema) === 'dark' ? 'light' : 'dark' })} title="Tema değiştir">
+        <button className="ikon-kare" onClick={() => ayarGuncelle({ tema: etkinTema(ayarlar.tema) === 'dark' ? 'light' : 'dark' })} title={t.tema}>
           {etkinTema(ayarlar.tema) === 'dark' ? <Moon size={15} /> : <Sun size={15} />}
         </button>
-<YardimMenusu kisayollarAc={p.kisayollarAc} hakkindaAc={p.hakkindaAc} ayarlarAc={p.ayarlarAc} />
+        <YardimMenusu kisayollarAc={p.kisayollarAc} hakkindaAc={p.hakkindaAc} ayarlarAc={p.ayarlarAc} />
       </div>
     </header>
   );

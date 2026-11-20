@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { eksikYapilar, hesabaGirenParatonerler, raporOzeti, type LatLng } from '../../core';
 import { useProje } from '../durum/ProjeSaglayici';
 import { IMLEC_OLAYI } from '../harita/Harita';
+import { useMetinler } from '../ortak/useMetinler';
 
-const koordinat = (deger: number, arti: string, eksi: string) => `${Math.abs(deger).toFixed(6).replace('.', ',')}° ${deger >= 0 ? arti : eksi}`;
 
 /** Fare haritadayken imlecin koordinatı. Kendi durumunu tutar: fare hareketi başka hiçbir şeyi yeniden çizmez. */
 function ImlecKoordinati() {
   const [konum, setKonum] = useState<LatLng | null>(null);
+  const m = useMetinler();
+  const koordinat = (deger: number, arti: string, eksi: string) => `${m.bicim.sayi(Math.abs(deger), 6)}° ${deger >= 0 ? arti : eksi}`;
   useEffect(() => {
     const dinle = (e: Event) => setKonum((e as CustomEvent<LatLng | null>).detail);
     window.addEventListener(IMLEC_OLAYI, dinle);
@@ -15,8 +17,8 @@ function ImlecKoordinati() {
   }, []);
   if (!konum) return null;
   return (
-    <span className="durum-cubugu-koordinat" title="İmlecin koordinatı (WGS 84)">
-      {koordinat(konum.lat, 'K', 'G')} · {koordinat(konum.lng, 'D', 'B')}
+    <span className="durum-cubugu-koordinat" title={m.durum.imlec}>
+      {koordinat(konum.lat, m.durum.kuzey, m.durum.guney)} · {koordinat(konum.lng, m.durum.dogu, m.durum.bati)}
     </span>
   );
 }
@@ -27,6 +29,7 @@ function ImlecKoordinati() {
  */
 export function DurumCubugu({ hesapTablosuAc, ayarlariAc }: { hesapTablosuAc: () => void; ayarlariAc: () => void }) {
   const { proje, sonuc } = useProje();
+  const t = useMetinler().durum;
   const ozet = raporOzeti(sonuc);
   const etkin = hesabaGirenParatonerler(proje).length;
   const eksik = eksikYapilar(sonuc).length;
@@ -35,26 +38,26 @@ export function DurumCubugu({ hesapTablosuAc, ayarlariAc }: { hesapTablosuAc: ()
   const istegeBagliAcikta = sonuc.yapilar.filter((y) => y.nihai.kod === 'ISTEGE_BAGLI_DISINDA').length;
 
   let durum: { sinif: string; metin: string };
-  if (proje.yapilar.length === 0) durum = { sinif: 'notr', metin: 'Yapı eklenmedi' };
-  else if (ozet.hesaplanamadi > 0) durum = { sinif: 'hata', metin: `${hata} eksik ya da hatalı girdi: ${ozet.hesaplanamadi} yapı hesaplanamadı` };
-  else if (eksik > 0) durum = { sinif: 'hata', metin: `${ozet.toplam} yapıdan ${eksik} tanesi tam korunmuyor` };
-  else if (istegeBagliAcikta > 0) durum = { sinif: 'notr', metin: `${istegeBagliAcikta} yapıda koruma isteğe bağlı, tamamı kapsanmıyor` };
-  else durum = { sinif: 'tamam', metin: ozet.toplam === 1 ? 'Yapı koruma altında' : `${ozet.toplam} yapının hepsi koruma altında` };
+  if (proje.yapilar.length === 0) durum = { sinif: 'notr', metin: t.yapiYok };
+  else if (ozet.hesaplanamadi > 0) durum = { sinif: 'hata', metin: t.hesaplanamadi(hata, ozet.hesaplanamadi) };
+  else if (eksik > 0) durum = { sinif: 'hata', metin: t.eksik(ozet.toplam, eksik) };
+  else if (istegeBagliAcikta > 0) durum = { sinif: 'notr', metin: t.istegeBagliAcikta(istegeBagliAcikta) };
+  else durum = { sinif: 'tamam', metin: ozet.toplam === 1 ? t.tekYapiTamam : t.hepsiTamam(ozet.toplam) };
 
   return (
     <footer className="durum-cubugu">
-      <button className={`durum-cubugu-sonuc ${durum.sinif}`} onClick={hesapTablosuAc} title="Ayrıntılı hesabı aç">
+      <button className={`durum-cubugu-sonuc ${durum.sinif}`} onClick={hesapTablosuAc} title={t.hesabiAc}>
         <span className="durum-cubugu-nokta" />
         {durum.metin}
       </button>
       <span className="durum-cubugu-oge">
-        {proje.yapilar.length} yapı · {proje.paratonerler.length} paratoner
-        {etkin !== proje.paratonerler.length ? ` (${etkin} etkin)` : ''}
+        {t.sayilar(proje.yapilar.length, proje.paratonerler.length)}
+        {etkin !== proje.paratonerler.length ? t.etkin(etkin) : ''}
       </span>
       <span className="durum-cubugu-bosluk" />
       <ImlecKoordinati />
-      <button className="durum-cubugu-oge durum-cubugu-parametre" onClick={ayarlariAc} title="Proje parametreleri">
-        Nk {proje.Nk ?? '–'} · ΔT {proje.deltaT_modu === 'paratoner' ? 'paratoner bazlı' : proje.deltaT !== null ? `${proje.deltaT} µs` : '–'}
+      <button className="durum-cubugu-oge durum-cubugu-parametre" onClick={ayarlariAc} title={t.parametreler}>
+        Nk {proje.Nk ?? '–'} · ΔT {proje.deltaT_modu === 'paratoner' ? t.paratonerBazli : proje.deltaT !== null ? `${proje.deltaT} µs` : '–'}
       </button>
       <span className="durum-cubugu-oge">NF C 17-102</span>
     </footer>

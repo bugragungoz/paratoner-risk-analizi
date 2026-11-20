@@ -9,6 +9,7 @@
 //   Imagery), OpenStreetMap standart karoları (toplu indirme yok), Google Places API (New),
 //   Nominatim (saniyede en fazla bir istek).
 
+use crate::dil::{self, m};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -105,17 +106,17 @@ pub struct KaroIstegi {
 pub fn karo_yolunu_coz(yol: &str) -> Result<KaroIstegi, &'static str> {
     let parcalar: Vec<&str> = yol.trim_matches('/').split('/').collect();
     let [katman, z, x, y] = parcalar.as_slice() else {
-        return Err("Karo adresi geçersiz.");
+        return Err(m("Karo adresi geçersiz.", "Invalid tile address."));
     };
-    let katman = Katman::adindan(katman).ok_or("Bilinmeyen harita katmanı.")?;
-    let sayi = |s: &str| s.parse::<u32>().map_err(|_| "Karo koordinatı geçersiz.");
+    let katman = Katman::adindan(katman).ok_or(m("Bilinmeyen harita katmanı.", "Unknown map layer."))?;
+    let sayi = |s: &str| s.parse::<u32>().map_err(|_| m("Karo koordinatı geçersiz.", "Invalid tile coordinate."));
     let (z, x, y) = (sayi(z)?, sayi(x)?, sayi(y)?);
     if z > katman.azami_zoom() {
-        return Err("Yakınlaştırma düzeyi bu katman için desteklenmiyor.");
+        return Err(m("Yakınlaştırma düzeyi bu katman için desteklenmiyor.", "This zoom level is not supported for this layer."));
     }
     let sinir = 1u64 << z;
     if u64::from(x) >= sinir || u64::from(y) >= sinir {
-        return Err("Karo koordinatı aralık dışında.");
+        return Err(m("Karo koordinatı aralık dışında.", "Tile coordinate out of range."));
     }
     Ok(KaroIstegi { katman, z, x, y })
 }
@@ -129,14 +130,14 @@ pub fn anahtar_bicimi_gecerli(anahtar: &str) -> bool {
 pub fn kaynak_adresi(k: &KaroIstegi, anahtar: Option<&str>, oturum: Option<&str>) -> Result<String, &'static str> {
     Ok(match k.katman {
         Katman::Osm => format!("{OSM_KARO}/{}/{}/{}.png", k.z, k.x, k.y),
-        Katman::EsriUydu => format!("{ESRI_GORUNTU}/{}/{}/{}?token={}", k.z, k.y, k.x, anahtar.ok_or("Esri anahtarı girilmemiş.")?),
+        Katman::EsriUydu => format!("{ESRI_GORUNTU}/{}/{}/{}?token={}", k.z, k.y, k.x, anahtar.ok_or(m("Esri anahtarı girilmemiş.", "No Esri key entered."))?),
         _ => format!(
             "{GOOGLE_KARO}/v1/2dtiles/{}/{}/{}?session={}&key={}",
             k.z,
             k.x,
             k.y,
-            oturum.ok_or("Google oturumu yok.")?,
-            anahtar.ok_or("Google anahtarı girilmemiş.")?
+            oturum.ok_or(m("Google oturumu yok.", "No Google session."))?,
+            anahtar.ok_or(m("Google anahtarı girilmemiş.", "No Google key entered."))?
         ),
     })
 }
@@ -153,12 +154,12 @@ pub fn hata_aciklamasi(durum: u16, govde: &str) -> String {
         })
         .unwrap_or_default();
     let temel = match durum {
-        400 => "İstek reddedildi (400)",
-        401 => "Anahtar geçersiz ya da süresi dolmuş (401)",
-        403 => "Anahtarın bu servise izni yok ya da servis projede etkin değil (403)",
-        429 => "Kota ya da istek sınırı aşıldı (429)",
-        500..=599 => "Sunucu hatası",
-        _ => "Beklenmeyen yanıt",
+        400 => m("İstek reddedildi (400)", "Request rejected (400)"),
+        401 => m("Anahtar geçersiz ya da süresi dolmuş (401)", "Key invalid or expired (401)"),
+        403 => m("Anahtarın bu servise izni yok ya da servis projede etkin değil (403)", "The key is not authorised for this service, or the service is not enabled in the project (403)"),
+        429 => m("Kota ya da istek sınırı aşıldı (429)", "Quota or rate limit exceeded (429)"),
+        500..=599 => m("Sunucu hatası", "Server error"),
+        _ => m("Beklenmeyen yanıt", "Unexpected response"),
     };
     if mesaj.is_empty() {
         format!("{temel}.")
@@ -200,8 +201,8 @@ impl HaritaDurumu {
 
     fn zorunlu_anahtar(&self, s: Saglayici) -> Result<String, String> {
         self.anahtar(s).ok_or_else(|| match s {
-            Saglayici::Google => "Google anahtarı girilmemiş (Ayarlar > Harita servisleri).".into(),
-            Saglayici::Esri => "Esri anahtarı girilmemiş (Ayarlar > Harita servisleri).".into(),
+            Saglayici::Google => m("Google anahtarı girilmemiş (Ayarlar > Harita servisleri).", "No Google key entered (Settings > Map services).").into(),
+            Saglayici::Esri => m("Esri anahtarı girilmemiş (Ayarlar > Harita servisleri).", "No Esri key entered (Settings > Map services).").into(),
         })
     }
 
@@ -217,7 +218,7 @@ impl HaritaDurumu {
             }
         }
         let anahtar = self.zorunlu_anahtar(Saglayici::Google)?;
-        let govde = katman.google_oturum_govdesi().ok_or("Google katmanı değil.")?;
+        let govde = katman.google_oturum_govdesi().ok_or(m("Google katmanı değil.", "Not a Google layer."))?;
         let yanit = self
             .istemci
             .post(format!("{GOOGLE_KARO}/v1/createSession"))
@@ -225,14 +226,14 @@ impl HaritaDurumu {
             .json(&govde)
             .send()
             .await
-            .map_err(|e| format!("Google'a bağlanılamadı: {e}"))?;
+            .map_err(|e| format!("{}: {e}", m("Google'a bağlanılamadı", "Could not connect to Google")))?;
         let durum = yanit.status().as_u16();
         let metin = yanit.text().await.unwrap_or_default();
         if durum != 200 {
             return Err(hata_aciklamasi(durum, &metin));
         }
-        let v: Value = serde_json::from_str(&metin).map_err(|_| "Google oturum yanıtı okunamadı.".to_string())?;
-        let oturum = v.get("session").and_then(Value::as_str).ok_or("Google oturum yanıtında oturum yok.")?.to_string();
+        let v: Value = serde_json::from_str(&metin).map_err(|_| m("Google oturum yanıtı okunamadı.", "The Google session response could not be read.").to_string())?;
+        let oturum = v.get("session").and_then(Value::as_str).ok_or(m("Google oturum yanıtında oturum yok.", "The Google session response contains no session."))?.to_string();
         let bitis = v.get("expiry").and_then(|e| e.as_str().and_then(|s| s.parse().ok()).or_else(|| e.as_u64())).unwrap_or(simdi + 86_400 * 2);
         oturumlar.insert(katman, (oturum.clone(), bitis));
         Ok(oturum)
@@ -248,7 +249,7 @@ impl HaritaDurumu {
             };
             let oturum = if k.katman.saglayici() == Some(Saglayici::Google) { Some(self.google_oturumu(k.katman, yenilendi).await?) } else { None };
             let adres = kaynak_adresi(k, anahtar.as_deref(), oturum.as_deref())?;
-            let yanit = self.istemci.get(adres).send().await.map_err(|e| format!("Karo alınamadı: {e}"))?;
+            let yanit = self.istemci.get(adres).send().await.map_err(|e| format!("{}: {e}", m("Karo alınamadı", "The tile could not be fetched")))?;
             let durum = yanit.status().as_u16();
             // Süresi dolmuş Google oturumu: bir kez yenileyip tekrar dene.
             if !yenilendi && oturum.is_some() && (durum == 401 || durum == 403) {
@@ -257,7 +258,7 @@ impl HaritaDurumu {
             }
             let tur = yanit.headers().get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok()).unwrap_or("application/octet-stream").to_string();
             let onbellek = yanit.headers().get(header::CACHE_CONTROL).and_then(|v| v.to_str().ok()).map(str::to_owned);
-            let govde = yanit.bytes().await.map_err(|e| format!("Karo okunamadı: {e}"))?.to_vec();
+            let govde = yanit.bytes().await.map_err(|e| format!("{}: {e}", m("Karo okunamadı", "The tile could not be read")))?.to_vec();
             return Ok((durum, tur, onbellek, govde));
         }
     }
@@ -313,12 +314,12 @@ pub fn harita_anahtar_durumu(durum: State<'_, HaritaDurumu>) -> AnahtarDurumu {
 pub async fn harita_anahtar_kaydet(durum: State<'_, HaritaDurumu>, saglayici: Saglayici, anahtar: String) -> Result<(), String> {
     let anahtar = anahtar.trim().to_string();
     if !anahtar_bicimi_gecerli(&anahtar) {
-        return Err("Anahtar biçimi geçersiz (yalnızca harf, rakam, - _ . olmalı).".into());
+        return Err(m("Anahtar biçimi geçersiz (yalnızca harf, rakam, - _ . olmalı).", "Invalid key format (letters, digits, - _ . only).").into());
     }
     keyring::Entry::new(ANAHTAR_SERVISI, saglayici.kayit_adi())
         .and_then(|e| e.set_password(&anahtar))
-        .map_err(|e| format!("Anahtar Windows kimlik deposuna yazılamadı: {e}"))?;
-    durum.anahtarlar.lock().map_err(|_| "Anahtar önbelleği kilitli.")?.insert(saglayici, Some(anahtar));
+        .map_err(|e| format!("{}: {e}", m("Anahtar Windows kimlik deposuna yazılamadı", "The key could not be written to the Windows credential store")))?;
+    durum.anahtarlar.lock().map_err(|_| m("Anahtar önbelleği kilitli.", "Key cache locked."))?.insert(saglayici, Some(anahtar));
     if saglayici == Saglayici::Google {
         durum.oturumlar.lock().await.clear();
     }
@@ -329,9 +330,9 @@ pub async fn harita_anahtar_kaydet(durum: State<'_, HaritaDurumu>, saglayici: Sa
 pub async fn harita_anahtar_sil(durum: State<'_, HaritaDurumu>, saglayici: Saglayici) -> Result<(), String> {
     match keyring::Entry::new(ANAHTAR_SERVISI, saglayici.kayit_adi()).and_then(|e| e.delete_credential()) {
         Ok(()) | Err(keyring::Error::NoEntry) => {}
-        Err(e) => return Err(format!("Anahtar silinemedi: {e}")),
+        Err(e) => return Err(format!("{}: {e}", m("Anahtar silinemedi", "The key could not be deleted"))),
     }
-    durum.anahtarlar.lock().map_err(|_| "Anahtar önbelleği kilitli.")?.insert(saglayici, None);
+    durum.anahtarlar.lock().map_err(|_| m("Anahtar önbelleği kilitli.", "Key cache locked."))?.insert(saglayici, None);
     if saglayici == Saglayici::Google {
         durum.oturumlar.lock().await.clear();
     }
@@ -345,10 +346,10 @@ async fn places_dene(durum: &HaritaDurumu) -> Result<(), String> {
         .istemci
         .post(format!("{GOOGLE_YER}/places:autocomplete"))
         .header("X-Goog-Api-Key", anahtar)
-        .json(&json!({ "input": "Ankara", "languageCode": "tr", "includedRegionCodes": ["tr"] }))
+        .json(&json!({ "input": "Ankara", "languageCode": dil::kod(), "includedRegionCodes": ["tr"] }))
         .send()
         .await
-        .map_err(|e| format!("Google'a bağlanılamadı: {e}"))?;
+        .map_err(|e| format!("{}: {e}", m("Google'a bağlanılamadı", "Could not connect to Google")))?;
     let kod = yanit.status().as_u16();
     if kod == 200 {
         Ok(())
@@ -366,20 +367,20 @@ pub async fn harita_anahtar_dene(durum: State<'_, HaritaDurumu>, saglayici: Sagl
             let mut satirlar = Vec::new();
             let mut hepsi = true;
             match durum.google_oturumu(Katman::GoogleUydu, true).await {
-                Ok(_) => satirlar.push("Map Tiles API: çalışıyor.".to_string()),
+                Ok(_) => satirlar.push(m("Map Tiles API: çalışıyor.", "Map Tiles API: working.").to_string()),
                 Err(e) => {
                     hepsi = false;
                     satirlar.push(format!("Map Tiles API: {e}"));
                 }
             }
             match places_dene(&durum).await {
-                Ok(()) => satirlar.push("Places API (New): çalışıyor.".to_string()),
+                Ok(()) => satirlar.push(m("Places API (New): çalışıyor.", "Places API (New): working.").to_string()),
                 Err(e) => {
                     hepsi = false;
                     satirlar.push(format!("Places API (New): {e}"));
                 }
             }
-            satirlar.push("Maps Embed API (Street View) buradan denenemez: Street View panelinde görüntü açılıyorsa çalışıyordur.".to_string());
+            satirlar.push(m("Maps Embed API (Street View) buradan denenemez: Street View panelinde görüntü açılıyorsa çalışıyordur.", "Maps Embed API (Street View) cannot be tested from here: if imagery opens in the Street View panel, it works.").to_string());
             let metin = satirlar.join("\n");
             if hepsi {
                 Ok(metin)
@@ -390,7 +391,7 @@ pub async fn harita_anahtar_dene(durum: State<'_, HaritaDurumu>, saglayici: Sagl
         Saglayici::Esri => {
             let (kod, _, _, govde) = durum.karo_getir(&KaroIstegi { katman: Katman::EsriUydu, z: 1, x: 1, y: 0 }).await?;
             if kod == 200 && !govde.is_empty() {
-                Ok("World Imagery çalışıyor.".into())
+                Ok(m("World Imagery çalışıyor.", "World Imagery working.").into())
             } else {
                 Err(hata_aciklamasi(kod, &String::from_utf8_lossy(&govde)))
             }
@@ -401,10 +402,10 @@ pub async fn harita_anahtar_dene(durum: State<'_, HaritaDurumu>, saglayici: Sagl
 /// Google haritasının görünen alana göre telif metni (Map Tiles API viewport bilgisi).
 #[tauri::command]
 pub async fn google_telif(durum: State<'_, HaritaDurumu>, katman: String, zoom: u32, kuzey: f64, guney: f64, dogu: f64, bati: f64) -> Result<String, String> {
-    let k = Katman::adindan(&katman).filter(|k| k.saglayici() == Some(Saglayici::Google)).ok_or("Google katmanı değil.")?;
+    let k = Katman::adindan(&katman).filter(|k| k.saglayici() == Some(Saglayici::Google)).ok_or(m("Google katmanı değil.", "Not a Google layer."))?;
     let ok = |v: f64, s: f64| v.is_finite() && v.abs() < s;
     if zoom > 22 || !ok(kuzey, 90.0) || !ok(guney, 90.0) || !ok(dogu, 180.0) || !ok(bati, 180.0) {
-        return Err("Görünüm sınırları geçersiz.".into());
+        return Err(m("Görünüm sınırları geçersiz.", "Invalid view bounds.").into());
     }
     let anahtar = durum.zorunlu_anahtar(Saglayici::Google)?;
     let oturum = durum.google_oturumu(k, false).await?;
@@ -422,13 +423,13 @@ pub async fn google_telif(durum: State<'_, HaritaDurumu>, katman: String, zoom: 
         ])
         .send()
         .await
-        .map_err(|e| format!("Google'a bağlanılamadı: {e}"))?;
+        .map_err(|e| format!("{}: {e}", m("Google'a bağlanılamadı", "Could not connect to Google")))?;
     let kod = yanit.status().as_u16();
     let metin = yanit.text().await.unwrap_or_default();
     if kod != 200 {
         return Err(hata_aciklamasi(kod, &metin));
     }
-    let v: Value = serde_json::from_str(&metin).map_err(|_| "Telif yanıtı okunamadı.".to_string())?;
+    let v: Value = serde_json::from_str(&metin).map_err(|_| m("Telif yanıtı okunamadı.", "The copyright response could not be read.").to_string())?;
     Ok(v.get("copyright").and_then(Value::as_str).unwrap_or_default().to_string())
 }
 
@@ -436,10 +437,10 @@ pub async fn google_telif(durum: State<'_, HaritaDurumu>, katman: String, zoom: 
 #[tauri::command]
 pub fn streetview_adresi(durum: State<'_, HaritaDurumu>, lat: f64, lng: f64) -> Result<String, String> {
     if !(lat.is_finite() && lng.is_finite() && lat.abs() <= 90.0 && lng.abs() <= 180.0) {
-        return Err("Konum geçersiz.".into());
+        return Err(m("Konum geçersiz.", "Invalid position.").into());
     }
     let anahtar = durum.zorunlu_anahtar(Saglayici::Google)?;
-    Ok(format!("https://www.google.com/maps/embed/v1/streetview?key={anahtar}&location={lat:.6},{lng:.6}&fov=90&language=tr&region=TR"))
+    Ok(format!("https://www.google.com/maps/embed/v1/streetview?key={anahtar}&location={lat:.6},{lng:.6}&fov=90&language={}&region=TR", dil::kod()))
 }
 
 #[derive(Serialize, Debug, PartialEq)]
@@ -483,7 +484,7 @@ pub async fn yer_oneri(durum: State<'_, HaritaDurumu>, sorgu: String, oturum: St
         return Ok(vec![]);
     }
     let anahtar = durum.zorunlu_anahtar(Saglayici::Google)?;
-    let mut govde = json!({ "input": sorgu, "sessionToken": oturum, "languageCode": "tr", "includedRegionCodes": ["tr"] });
+    let mut govde = json!({ "input": sorgu, "sessionToken": oturum, "languageCode": dil::kod(), "includedRegionCodes": ["tr"] });
     if let (Some(lat), Some(lng)) = (lat, lng) {
         if lat.is_finite() && lng.is_finite() {
             govde["locationBias"] = json!({ "circle": { "center": { "latitude": lat, "longitude": lng }, "radius": 50000.0 } });
@@ -496,7 +497,7 @@ pub async fn yer_oneri(durum: State<'_, HaritaDurumu>, sorgu: String, oturum: St
         .json(&govde)
         .send()
         .await
-        .map_err(|e| format!("Google'a bağlanılamadı: {e}"))?;
+        .map_err(|e| format!("{}: {e}", m("Google'a bağlanılamadı", "Could not connect to Google")))?;
     let kod = yanit.status().as_u16();
     let metin = yanit.text().await.unwrap_or_default();
     if kod != 200 {
@@ -516,26 +517,26 @@ pub struct YerAyrintisi {
 #[tauri::command]
 pub async fn yer_ayrinti(durum: State<'_, HaritaDurumu>, yer_id: String, oturum: String) -> Result<YerAyrintisi, String> {
     if yer_id.is_empty() || yer_id.len() > 300 || !yer_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') || !oturum_gecerli(&oturum) {
-        return Err("Yer kimliği geçersiz.".into());
+        return Err(m("Yer kimliği geçersiz.", "Invalid place ID.").into());
     }
     let anahtar = durum.zorunlu_anahtar(Saglayici::Google)?;
     let yanit = durum
         .istemci
         .get(format!("{GOOGLE_YER}/places/{yer_id}"))
-        .query(&[("sessionToken", oturum.as_str()), ("languageCode", "tr"), ("regionCode", "TR")])
+        .query(&[("sessionToken", oturum.as_str()), ("languageCode", dil::kod()), ("regionCode", "TR")])
         .header("X-Goog-Api-Key", anahtar)
         .header("X-Goog-FieldMask", "location,formattedAddress")
         .send()
         .await
-        .map_err(|e| format!("Google'a bağlanılamadı: {e}"))?;
+        .map_err(|e| format!("{}: {e}", m("Google'a bağlanılamadı", "Could not connect to Google")))?;
     let kod = yanit.status().as_u16();
     let metin = yanit.text().await.unwrap_or_default();
     if kod != 200 {
         return Err(hata_aciklamasi(kod, &metin));
     }
-    let v: Value = serde_json::from_str(&metin).map_err(|_| "Yer yanıtı okunamadı.".to_string())?;
-    let lat = v.pointer("/location/latitude").and_then(Value::as_f64).ok_or("Yerin konumu yok.")?;
-    let lng = v.pointer("/location/longitude").and_then(Value::as_f64).ok_or("Yerin konumu yok.")?;
+    let v: Value = serde_json::from_str(&metin).map_err(|_| m("Yer yanıtı okunamadı.", "The place response could not be read.").to_string())?;
+    let lat = v.pointer("/location/latitude").and_then(Value::as_f64).ok_or(m("Yerin konumu yok.", "The place has no location."))?;
+    let lng = v.pointer("/location/longitude").and_then(Value::as_f64).ok_or(m("Yerin konumu yok.", "The place has no location."))?;
     Ok(YerAyrintisi { lat, lng, adres: v.get("formattedAddress").and_then(Value::as_str).unwrap_or_default().to_string() })
 }
 
@@ -566,10 +567,10 @@ pub async fn nominatim_ara(durum: State<'_, HaritaDurumu>, sorgu: String) -> Res
     let yanit = durum
         .istemci
         .get(NOMINATIM)
-        .query(&[("format", "jsonv2"), ("q", sorgu), ("limit", "8"), ("accept-language", "tr"), ("countrycodes", "tr")])
+        .query(&[("format", "jsonv2"), ("q", sorgu), ("limit", "8"), ("accept-language", dil::kod()), ("countrycodes", "tr")])
         .send()
         .await
-        .map_err(|e| format!("Arama sunucusuna bağlanılamadı: {e}"))?;
+        .map_err(|e| format!("{}: {e}", m("Arama sunucusuna bağlanılamadı", "Could not connect to the search server")))?;
     let kod = yanit.status().as_u16();
     let metin = yanit.text().await.unwrap_or_default();
     if kod != 200 {

@@ -7,6 +7,8 @@
 // - h > 60 m: standart tablo dışı → değer üretilmez.
 // - ΔT tablolarda yoksa ya da girilmemişse → değer üretilmez (v5'te sessizce 60 µs kullanılıyordu, M2).
 
+import type { Metinler } from '../dil';
+import { tr as TR } from '../dil/tr';
 import { ESE_TABLOLARI } from './sabitler';
 import type { Seviye } from './tipler';
 
@@ -16,19 +18,11 @@ export type RpOkuma =
   | { tamam: true; rp: number; enterpoleEdildi: boolean }
   | { tamam: false; neden: RpHatasi; mesaj: string };
 
-export const RP_MESAJLARI: Record<RpHatasi, string> = {
-  GECERSIZ_H: 'Geçersiz h değeri.',
-  DELTA_T_TANIMSIZ: 'ΔT seçilmemiş ya da tabloda yok (geçerli değerler: 15, 30, 45, 60 µs).',
-  H_2_ALTI: 'NFC 17-102 standardı gereği h mesafesi 2 metreden az olamaz.',
-  H_60_USTU:
-    'Bu yükseklik için uygulama tarafından standart tabanlı Rp değeri üretilememektedir. 60 m üzerindeki yükseklikler için özel mühendislik değerlendirmesi gereklidir.',
-};
+/** Türkçe mesajlar (dile göre: `m.hesap.rp`). */
+export const RP_MESAJLARI: Record<RpHatasi, string> = TR.hesap.rp;
 
-function hata(neden: RpHatasi): RpOkuma {
-  return { tamam: false, neden, mesaj: RP_MESAJLARI[neden] };
-}
-
-export function rpOku(h: number, sutun: Seviye, deltaT: number | null | undefined): RpOkuma {
+export function rpOku(h: number, sutun: Seviye, deltaT: number | null | undefined, m: Metinler = TR): RpOkuma {
+  const hata = (neden: RpHatasi): RpOkuma => ({ tamam: false, neden, mesaj: m.hesap.rp[neden] });
   if (typeof h !== 'number' || Number.isNaN(h)) return hata('GECERSIZ_H');
   const tablo = deltaT === null || deltaT === undefined ? undefined : ESE_TABLOLARI[deltaT];
   if (!tablo) return hata('DELTA_T_TANIMSIZ');

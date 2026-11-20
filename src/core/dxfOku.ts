@@ -10,6 +10,8 @@
 // Kodlama: AC1021 (2007) ve sonrası UTF-8; öncesi başlıktaki $DWGCODEPAGE (ör. ANSI_1254).
 // Metinlerdeki \U+XXXX kaçışları çözülür. İkili (binary) DXF desteklenmez.
 
+import { tr as TR } from '../dil/tr';
+
 export interface DxfAltlikKatmani {
   ad: string;
   /** AutoCAD renk dizini (ACI), 1–255. */
@@ -43,13 +45,7 @@ export interface DxfAltligi {
 
 export class DxfOkumaHatasi extends Error {
   constructor(public kod: 'IKILI' | 'BICIM' | 'BOS') {
-    super(
-      kod === 'IKILI'
-        ? 'İkili (binary) DXF desteklenmiyor; çizimi ASCII DXF olarak kaydedin.'
-        : kod === 'BOS'
-          ? 'Çizimde gösterilebilecek çizgi yok.'
-          : 'Dosya geçerli bir DXF değil.',
-    );
+    super(kod === 'IKILI' ? TR.altlik.hataIkili : kod === 'BOS' ? TR.altlik.hataBos : TR.altlik.hataBicim);
   }
 }
 

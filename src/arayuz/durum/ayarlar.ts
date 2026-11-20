@@ -1,6 +1,6 @@
 // Uygulama düzeyindeki ayarlar (projeden bağımsız; bu bilgisayarda saklanır).
 
-import { dilMi, type Dil } from '../../dil';
+import { dilMi, metinler, type Dil } from '../../dil';
 import type { KatmanAdi } from '../harita/katmanlar';
 import type { OtomatikKayitKonumu } from '../platform/tauri';
 import { ornekProfiller, profilleriOku, type CProfili } from './cProfilleri';
@@ -56,6 +56,12 @@ export const VARSAYILAN_AYARLAR: UygulamaAyarlari = {
 
 const metinMi = (x: unknown): x is string => typeof x === 'string';
 
+/** Kayıtlı dil yoksa (ilk açılış) işletim sisteminin dili: Türkçe değilse İngilizce. */
+export function sistemDili(): Dil {
+  const dil = typeof navigator !== 'undefined' ? (navigator.language ?? '') : '';
+  return !dil || dil.toLowerCase().startsWith('tr') ? 'tr' : 'en';
+}
+
 function muhendisOku(x: unknown): MuhendisBilgisi {
   const m = typeof x === 'object' && x !== null ? (x as Record<string, unknown>) : {};
   const imza = metinMi(m.imza) && /^data:image\/(png|jpeg);base64,/.test(m.imza) && m.imza.length <= IMZA_SINIRI ? m.imza : null;
@@ -70,12 +76,13 @@ export function ayarlariYukle(): UygulamaAyarlari {
     if (!['dark', 'light', 'sistem'].includes(ayarlar.tema)) ayarlar.tema = 'dark';
     if (ayarlar.otomatikKayitKonumu !== 'masaustu' && ayarlar.otomatikKayitKonumu !== 'belgeler') ayarlar.otomatikKayitKonumu = 'masaustu';
     ayarlar.muhendis = muhendisOku(kayit.muhendis);
-    ayarlar.cProfilleri = profilleriOku(kayit.cProfilleri);
+    ayarlar.dil = dilMi(kayit.dil) ? kayit.dil : sistemDili();
+    ayarlar.cProfilleri = profilleriOku(kayit.cProfilleri, metinler(ayarlar.dil));
     ayarlar.kosullarKabul = metinMi(kayit.kosullarKabul) ? kayit.kosullarKabul : null;
-    ayarlar.dil = dilMi(kayit.dil) ? kayit.dil : 'tr';
     return ayarlar;
   } catch {
-    return { ...VARSAYILAN_AYARLAR, cProfilleri: ornekProfiller() };
+    const dil = sistemDili();
+    return { ...VARSAYILAN_AYARLAR, dil, cProfilleri: ornekProfiller(metinler(dil)) };
   }
 }
 

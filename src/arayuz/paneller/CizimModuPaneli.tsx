@@ -1,31 +1,34 @@
 import { Building2, Eye, MapPin, Ruler, SquareDashed, Zap } from 'lucide-react';
 import type { CizimModu } from '../harita/Harita';
+import { useMetinler } from '../ortak/useMetinler';
 
-const MODLAR: { mod: CizimModu; etiket: string; ikon: typeof Zap; ipucu: string }[] = [
-  { mod: 'paratoner', etiket: 'Paratoner ekle', ikon: Zap, ipucu: 'Haritada paratonerin yerine tıklayın.' },
-  { mod: 'yapi', etiket: 'Yapı ekle (poligon)', ikon: Building2, ipucu: 'Köşelere sırayla tıklayın; bitirmek için ilk noktaya tıklayın ya da Enter. Son noktayı geri almak için Ctrl+Z, vazgeçmek için Esc.' },
-  { mod: 'parsel', etiket: 'Parsel sınırı çiz', ikon: SquareDashed, ipucu: 'Köşelere sırayla tıklayın; bitirmek için ilk noktaya tıklayın ya da Enter.' },
-  { mod: 'olcum', etiket: 'Mesafe ölç', ikon: Ruler, ipucu: 'Noktalara tıklayarak mesafe ölçün. Esc ile temizleyin.' },
-  { mod: 'streetview', etiket: 'Street View aç', ikon: Eye, ipucu: 'Street View açmak için haritada bir noktaya tıklayın.' },
+type Mod = 'paratoner' | 'yapi' | 'parsel' | 'olcum' | 'streetview';
+const MODLAR: { mod: Mod; ikon: typeof Zap }[] = [
+  { mod: 'paratoner', ikon: Zap },
+  { mod: 'yapi', ikon: Building2 },
+  { mod: 'parsel', ikon: SquareDashed },
+  { mod: 'olcum', ikon: Ruler },
+  { mod: 'streetview', ikon: Eye },
 ];
 
 export function CizimModuPaneli({ mod, modSec }: { mod: CizimModu; modSec: (m: CizimModu) => void }) {
+  const t = useMetinler().cizim;
   const aktif = MODLAR.find((m) => m.mod === mod);
   return (
     <div className="panel">
-      <h3>Çizim modu</h3>
+      <h3>{t.baslik}</h3>
       <div className="mod-butonlari">
-        {MODLAR.map(({ mod: m, etiket, ikon: Ikon }) => (
+        {MODLAR.map(({ mod: m, ikon: Ikon }) => (
           <button key={m} className={mod === m ? 'mod-aktif' : ''} onClick={() => modSec(m)} aria-pressed={mod === m}>
             <Ikon size={14} />
-            {etiket}
+            {t[m]}
           </button>
         ))}
       </div>
       {aktif && (
         <p className="ipucu">
           <MapPin size={11} style={{ verticalAlign: -1, marginRight: 4 }} />
-          {aktif.ipucu}
+          {t[`${aktif.mod}Ipucu`]}
         </p>
       )}
     </div>

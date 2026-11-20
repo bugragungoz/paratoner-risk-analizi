@@ -2,10 +2,11 @@
 // KMZ kaydeder). Arşivde önce "doc.kml", yoksa ada göre ilk .kml dosyası okunur.
 
 import JSZip from 'jszip';
+import { tr as TR } from '../../dil/tr';
 
 export class KmzBosHatasi extends Error {
   constructor() {
-    super('KMZ arşivinde KML dosyası yok.');
+    super(TR.kml.kmzBos);
   }
 }
 

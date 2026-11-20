@@ -39,6 +39,15 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; s
   - Projede çizimin kendisi değil yolu ve hizalaması saklanır (AutoCAD dış başvurusu gibi); proje
     açılınca çizim yolundan yeniden okunur, bulunamazsa yeniden seçilir.
 
+- **İngilizce:** arayüz Türkçe ya da İngilizce kullanılabilir (Ayarlar › Uygulama). Menüler,
+  pencereler, hesap ve doğrulama mesajları, dosya hataları ve harita servisi mesajları seçilen dilde
+  gösterilir; ilk açılışta Windows'un dili Türkçe değilse İngilizce başlar.
+  - Word ve PDF raporunun dili rapor penceresinde ayrıca seçilir; CSV hesap tablosu, KML ve DXF
+    çıktıları arayüz dilinde yazılır (İngilizcede ondalık nokta, CSV'de virgül ayraç). Hesap ve
+    sonuçlar iki dilde de aynıdır; projede girilen adlar ve notlar çevrilmez.
+  - İngilizce terimler NF C 17-102'nin İngilizce baskısını izler (ESE air terminal, protection
+    level, protection radius Rp, ΔT ESE efficiency).
+
 ### Düzeltildi
 
 - **Hesap:** mesafe, alan ve kapsama elipsoit (GRS80) üzerinde, yapının yerel Transverse Mercator

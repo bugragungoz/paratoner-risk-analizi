@@ -62,6 +62,7 @@ function tablo(b: Extract<RaporBlogu, { tur: 'tablo' }>): Dugum {
 /** Kapağın altındaki "Hazırlayan" bloğu; sayfada ortalanır ve kapağı bitirir. */
 function imzaBlogu(r: RaporIcerigi, imza: RaporGorseli | null): Dugum {
   const m = r.muhendis;
+  const e = r.etiketler;
   const satir = (a: string, d: string) => [{ text: a, bold: true }, { text: d }];
   const imzaHucresi = imza ? { image: gorselUrl(imza), fit: [140, 60] } : { canvas: [{ type: 'line', x1: 0, y1: 40, x2: 200, y2: 40, lineWidth: 0.6, lineColor: GRI }] };
   return {
@@ -70,7 +71,7 @@ function imzaBlogu(r: RaporIcerigi, imza: RaporGorseli | null): Dugum {
     margin: [0, 44, 0, 0],
     stack: [
       { canvas: [{ type: 'line', x1: 0, y1: 0, x2: ICERIK, y2: 0, lineWidth: 0.5, lineColor: KENAR }] },
-      { text: 'Hazırlayan', bold: true, fontSize: 12, color: LACIVERT, alignment: 'center', margin: [0, 12, 0, 6] },
+      { text: e.hazirlayan, bold: true, fontSize: 12, color: LACIVERT, alignment: 'center', margin: [0, 12, 0, 6] },
       {
         columns: [
           { width: '*', text: '' },
@@ -79,7 +80,7 @@ function imzaBlogu(r: RaporIcerigi, imza: RaporGorseli | null): Dugum {
             layout: 'noBorders',
             table: {
               widths: [100, 220],
-              body: [satir('Ad soyad', m.ad || '-'), satir('Unvan', m.unvan || '-'), satir('EMO sicil no', m.sicilNo || '-'), satir('Tarih', m.tarih), [{ text: 'İmza', bold: true }, imzaHucresi]],
+              body: [satir(e.adSoyad, m.ad || '-'), satir(e.unvan, m.unvan || '-'), satir(e.sicilNo, m.sicilNo || '-'), satir(e.tarih, m.tarih), [{ text: e.imza, bold: true }, imzaHucresi]],
             },
           },
           { width: '*', text: '' },
@@ -100,8 +101,9 @@ function kapak(r: RaporIcerigi, logo: RaporGorseli | null, imza: RaporGorseli | 
     { text: k.proje, bold: true, fontSize: 13, color: LACIVERT, alignment: 'center', margin: [0, 0, 0, 6] },
     { text: k.adres, alignment: 'center', margin: [0, 0, 0, 40] },
   );
-  if (k.raporNo) d.push({ text: `Rapor no: ${k.raporNo}`, alignment: 'center', margin: [0, 0, 0, 6] });
-  d.push({ text: `Revizyon: ${k.revizyon}`, alignment: 'center', margin: [0, 0, 0, 6] }, { text: `Rapor tarihi: ${k.tarih}`, alignment: 'center' }, imzaBlogu(r, imza));
+  const e = r.etiketler;
+  if (k.raporNo) d.push({ text: `${e.raporNo}: ${k.raporNo}`, alignment: 'center', margin: [0, 0, 0, 6] });
+  d.push({ text: `${e.revizyon}: ${k.revizyon}`, alignment: 'center', margin: [0, 0, 0, 6] }, { text: `${e.raporTarihi}: ${k.tarih}`, alignment: 'center' }, imzaBlogu(r, imza));
   return d;
 }
 
@@ -150,7 +152,7 @@ export function pdfTanimi(r: RaporIcerigi, gorseller: RaporGorselleri): Dugum {
         break;
       }
       case 'icindekiler':
-        icerik.push({ toc: { title: { text: 'İçindekiler', bold: true, fontSize: 15, color: LACIVERT, margin: [0, 18, 0, 8] } }, margin: [0, 0, 0, 0] });
+        icerik.push({ toc: { title: { text: r.etiketler.icindekiler, bold: true, fontSize: 15, color: LACIVERT, margin: [0, 18, 0, 8] } }, margin: [0, 0, 0, 0] });
         break;
       case 'sayfaSonu':
         icerik.push({ text: '', pageBreak: 'after' });
@@ -160,6 +162,7 @@ export function pdfTanimi(r: RaporIcerigi, gorseller: RaporGorselleri): Dugum {
 
   return {
     pageSize: 'A4',
+    language: r.etiketler.dil,
     pageMargins: [KENAR_BOSLUGU, 64, KENAR_BOSLUGU, 56],
     info: { title: r.belgeBasligi, creator: 'Paratoner Risk Analizi', producer: 'Paratoner Risk Analizi' },
     defaultStyle: { font: PDF_YAZI_TIPI, fontSize: 10.5, lineHeight: 1.12 },
@@ -173,7 +176,7 @@ export function pdfTanimi(r: RaporIcerigi, gorseller: RaporGorselleri): Dugum {
               { canvas: [{ type: 'line', x1: 0, y1: 4, x2: ICERIK, y2: 4, lineWidth: 0.5, lineColor: KENAR }] },
             ],
           },
-    footer: (sayfa: number, toplam: number) => (sayfa === 1 ? null : { text: `Sayfa ${sayfa} / ${toplam}`, fontSize: 8.5, color: GRI, alignment: 'center', margin: [0, 18, 0, 0] }),
+    footer: (sayfa: number, toplam: number) => (sayfa === 1 ? null : { text: `${r.etiketler.sayfa} ${sayfa} / ${toplam}`, fontSize: 8.5, color: GRI, alignment: 'center', margin: [0, 18, 0, 0] }),
     // Başlık sayfanın son satırına düşmesin.
     pageBreakBefore: (dugum: { headlineLevel?: number }, sorgu: { getFollowingNodesOnPage: () => unknown[] }) => !!dugum.headlineLevel && sorgu.getFollowingNodesOnPage().length === 0,
     content: icerik,

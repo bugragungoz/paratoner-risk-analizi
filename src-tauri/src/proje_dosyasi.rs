@@ -3,6 +3,7 @@
 // Arayüz, diske yalnızca bu komutlarla erişir: uzantı, boyut ve yol burada denetlenir;
 // yazma işlemleri yarıda kalırsa eski dosyayı bozmamak için önce geçici dosyaya yapılır.
 
+use crate::dil::{ingilizce, m};
 use serde::Serialize;
 use std::fs;
 use std::io::Write;
@@ -28,7 +29,7 @@ fn uzanti(yol: &Path) -> String {
 fn mutlak_yol(yol: &str) -> Result<PathBuf, String> {
     let yol = PathBuf::from(yol);
     if !yol.is_absolute() {
-        return Err("Dosya yolu geçersiz.".into());
+        return Err(m("Dosya yolu geçersiz.", "Invalid file path.").into());
     }
     Ok(yol)
 }
@@ -76,13 +77,13 @@ fn kisa_kimlik(id: &str) -> String {
 
 /// İçeriği önce aynı klasördeki geçici dosyaya yazar, sonra hedefin yerine koyar.
 fn guvenli_yaz(hedef: &Path, icerik: &[u8]) -> Result<(), String> {
-    let ust = hedef.parent().ok_or("Hedef klasör bulunamadı.")?;
+    let ust = hedef.parent().ok_or(m("Hedef klasör bulunamadı.", "Target folder not found."))?;
     if !ust.is_dir() {
-        return Err("Hedef klasör bulunamadı.".into());
+        return Err(m("Hedef klasör bulunamadı.", "Target folder not found.").into());
     }
     let ad = hedef
         .file_name()
-        .ok_or("Dosya adı geçersiz.")?
+        .ok_or(m("Dosya adı geçersiz.", "Invalid file name."))?
         .to_string_lossy()
         .to_string();
     let gecici = ust.join(format!(".{ad}.yaziliyor"));
@@ -95,21 +96,21 @@ fn guvenli_yaz(hedef: &Path, icerik: &[u8]) -> Result<(), String> {
     })();
     if let Err(e) = sonuc {
         let _ = fs::remove_file(&gecici);
-        return Err(format!("Dosya yazılamadı: {e}"));
+        return Err(format!("{}: {e}", m("Dosya yazılamadı", "The file could not be written")));
     }
     Ok(())
 }
 
 fn metni_oku(yol: &Path) -> Result<String, String> {
-    let bilgi = fs::metadata(yol).map_err(|e| format!("Dosya açılamadı: {e}"))?;
+    let bilgi = fs::metadata(yol).map_err(|e| format!("{}: {e}", m("Dosya açılamadı", "The file could not be opened")))?;
     if !bilgi.is_file() {
-        return Err("Seçilen öğe bir dosya değil.".into());
+        return Err(m("Seçilen öğe bir dosya değil.", "The selected item is not a file.").into());
     }
     if bilgi.len() > DOSYA_SINIRI {
-        return Err("Dosya bir proje dosyası için fazla büyük.".into());
+        return Err(m("Dosya bir proje dosyası için fazla büyük.", "The file is too large for a project file.").into());
     }
-    let veri = fs::read(yol).map_err(|e| format!("Dosya okunamadı: {e}"))?;
-    String::from_utf8(veri).map_err(|_| "Dosya okunamadı: metin kodlaması UTF-8 değil.".into())
+    let veri = fs::read(yol).map_err(|e| format!("{}: {e}", m("Dosya okunamadı", "The file could not be read")))?;
+    String::from_utf8(veri).map_err(|_| m("Dosya okunamadı: metin kodlaması UTF-8 değil.", "The file could not be read: the text encoding is not UTF-8.").into())
 }
 
 // ------------------------------------------------------------------ Proje dosyası
@@ -121,7 +122,7 @@ pub async fn proje_dosyasi_oku(yol: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let yol = mutlak_yol(&yol)?;
         if !matches!(uzanti(&yol).as_str(), "ptproj" | "json") {
-            return Err("Yalnızca .ptproj ya da eski sürümün .json proje dosyaları açılabilir.".into());
+            return Err(m("Yalnızca .ptproj ya da eski sürümün .json proje dosyaları açılabilir.", "Only .ptproj files or .json project files of the earlier version can be opened.").into());
         }
         metni_oku(&yol)
     })
@@ -135,10 +136,10 @@ pub async fn proje_dosyasi_yaz(yol: String, icerik: String) -> Result<(), String
     tauri::async_runtime::spawn_blocking(move || {
         let yol = mutlak_yol(&yol)?;
         if uzanti(&yol) != "ptproj" {
-            return Err("Proje yalnızca .ptproj uzantılı dosyaya kaydedilebilir.".into());
+            return Err(m("Proje yalnızca .ptproj uzantılı dosyaya kaydedilebilir.", "The project can only be saved to a file with the .ptproj extension.").into());
         }
         if icerik.len() as u64 > DOSYA_SINIRI {
-            return Err("Proje bir dosya için fazla büyük.".into());
+            return Err(m("Proje bir dosya için fazla büyük.", "The project is too large for a file.").into());
         }
         guvenli_yaz(&yol, icerik.as_bytes())
     })
@@ -152,9 +153,9 @@ fn otomatik_kayit_klasoru(app: &AppHandle, konum: &str) -> Result<PathBuf, Strin
     let taban = match konum {
         "masaustu" => app.path().desktop_dir(),
         "belgeler" => app.path().document_dir(),
-        _ => return Err("Otomatik kayıt konumu geçersiz.".into()),
+        _ => return Err(m("Otomatik kayıt konumu geçersiz.", "Invalid autosave location.").into()),
     }
-    .map_err(|e| format!("Klasör bulunamadı: {e}"))?;
+    .map_err(|e| format!("{}: {e}", m("Klasör bulunamadı", "Folder not found")))?;
     Ok(taban.join(OTOMATIK_KAYIT_KLASORU))
 }
 
@@ -183,9 +184,9 @@ pub async fn otomatik_kayit_yaz(
     let klasor = otomatik_kayit_klasoru(&app, &konum)?;
     tauri::async_runtime::spawn_blocking(move || {
         if icerik.len() as u64 > DOSYA_SINIRI {
-            return Err("Proje bir dosya için fazla büyük.".into());
+            return Err(m("Proje bir dosya için fazla büyük.", "The project is too large for a file.").into());
         }
-        fs::create_dir_all(&klasor).map_err(|e| format!("Otomatik kayıt klasörü oluşturulamadı: {e}"))?;
+        fs::create_dir_all(&klasor).map_err(|e| format!("{}: {e}", m("Otomatik kayıt klasörü oluşturulamadı", "The autosave folder could not be created")))?;
         let kimlik = kisa_kimlik(&proje_id);
         let ad = guvenli_ad(&proje_adi, "Proje");
         let ek = format!(" ({kimlik}).ptproj");
@@ -206,10 +207,10 @@ pub async fn otomatik_kayit_yaz(
         let mut yedek_yolu = None;
         if let Some(etiket) = zaman_etiketi {
             if etiket.is_empty() || etiket.len() > 32 || !etiket.chars().all(|c| c.is_ascii_digit() || c == '-' || c == ' ') {
-                return Err("Yedek zaman etiketi geçersiz.".into());
+                return Err(m("Yedek zaman etiketi geçersiz.", "Invalid backup timestamp.").into());
             }
             let yedekler = klasor.join(YEDEK_KLASORU);
-            fs::create_dir_all(&yedekler).map_err(|e| format!("Yedek klasörü oluşturulamadı: {e}"))?;
+            fs::create_dir_all(&yedekler).map_err(|e| format!("{}: {e}", m("Yedek klasörü oluşturulamadı", "The backup folder could not be created")))?;
             let yedek = yedekler.join(format!("{ad} ({kimlik}) {etiket}.ptproj"));
             guvenli_yaz(&yedek, icerik.as_bytes())?;
             yedek_yolu = Some(yedek.to_string_lossy().to_string());
@@ -308,19 +309,20 @@ fn dis_dosya_baytlari(yol: &str, uzantilar: &[&str], sinir: u64, uzanti_hatasi: 
     if !uzantilar.contains(&uzanti(&yol).as_str()) {
         return Err(uzanti_hatasi.into());
     }
-    let bilgi = fs::metadata(&yol).map_err(|e| format!("Dosya açılamadı: {e}"))?;
+    let bilgi = fs::metadata(&yol).map_err(|e| format!("{}: {e}", m("Dosya açılamadı", "The file could not be opened")))?;
     if !bilgi.is_file() {
-        return Err("Seçilen öğe bir dosya değil.".into());
+        return Err(m("Seçilen öğe bir dosya değil.", "The selected item is not a file.").into());
     }
     if bilgi.len() > sinir {
-        return Err(format!("Dosya içe aktarmak için fazla büyük (en çok {} MB).", sinir / (1024 * 1024)));
+        let mb = sinir / (1024 * 1024);
+        return Err(if ingilizce() { format!("The file is too large to import ({mb} MB at most).") } else { format!("Dosya içe aktarmak için fazla büyük (en çok {mb} MB).") });
     }
-    fs::read(&yol).map_err(|e| format!("Dosya okunamadı: {e}"))
+    fs::read(&yol).map_err(|e| format!("{}: {e}", m("Dosya okunamadı", "The file could not be read")))
 }
 
 /// .kml ya da .kmz dosyasını ham bayt olarak okur; KMZ arşivi arayüzde açılır.
 fn kml_baytlari(yol: &str) -> Result<Vec<u8>, String> {
-    dis_dosya_baytlari(yol, &["kml", "kmz"], KML_SINIRI, "Yalnızca .kml ya da .kmz dosyaları içe aktarılabilir.")
+    dis_dosya_baytlari(yol, &["kml", "kmz"], KML_SINIRI, m("Yalnızca .kml ya da .kmz dosyaları içe aktarılabilir.", "Only .kml or .kmz files can be imported."))
 }
 
 /// Altlık olarak açılan DXF dosyası boyut sınırı (bayt).
@@ -330,7 +332,7 @@ const DXF_SINIRI: u64 = 100 * 1024 * 1024;
 #[tauri::command]
 pub async fn dxf_dosyasi_oku(yol: String) -> Result<tauri::ipc::Response, String> {
     let bayt = tauri::async_runtime::spawn_blocking(move || {
-        dis_dosya_baytlari(&yol, &["dxf"], DXF_SINIRI, "Yalnızca .dxf dosyaları altlık olarak açılabilir.")
+        dis_dosya_baytlari(&yol, &["dxf"], DXF_SINIRI, m("Yalnızca .dxf dosyaları altlık olarak açılabilir.", "Only .dxf files can be opened as an underlay."))
     })
     .await
     .map_err(|e| e.to_string())??;

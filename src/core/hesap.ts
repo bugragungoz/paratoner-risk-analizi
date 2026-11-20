@@ -3,7 +3,6 @@
 // (v5'te harita, tablo ve rapor aynı hesabı farklı kurallarla ayrı ayrı yapıyordu — M4).
 
 import {
-  DELTA_T_ONAY_MESAJI,
   deltaTsizParatonerler,
   etkinDeltaT,
   hesabaGirenParatonerler,
@@ -14,8 +13,9 @@ import {
   yapiSorunlari,
   type DogrulamaSonucu,
 } from './dogrulama';
-import { yuzde } from './bicim';
-import { RP_MESAJLARI, rpOku } from './ese';
+import type { Metinler } from '../dil';
+import { tr as TR } from '../dil/tr';
+import { rpOku } from './ese';
 import { aeHesapla, ELIPSOIT_MODELI, tamKapsama, type GeometriModeli, type KapsamaAnalizi } from './geometri';
 import { gercekHHesapla } from './kot';
 import { yapiRiskAnalizi, type RiskAnalizi } from './risk';
@@ -89,19 +89,18 @@ export const RENK = {
   acikYesil: '#84cc16',
 } as const;
 
+export const SATIR_RENKLERI: Record<SatirDurumu, string> = { YETERLI: RENK.yesil, KISMI: RENK.sari, YETERSIZ: RENK.kirmizi };
+
+/** Satır durumu etiketleri ve renkleri (Türkçe; dile göre: `m.hesap.satir`). */
 export const SATIR_ETIKETLERI: Record<SatirDurumu, { etiket: string; renk: string }> = {
-  YETERLI: { etiket: 'Koruma yeterli', renk: RENK.yesil },
-  KISMI: { etiket: 'Kısmi koruma', renk: RENK.sari },
-  YETERSIZ: { etiket: 'Koruma yetersiz', renk: RENK.kirmizi },
+  YETERLI: { etiket: TR.hesap.satir.YETERLI, renk: RENK.yesil },
+  KISMI: { etiket: TR.hesap.satir.KISMI, renk: RENK.sari },
+  YETERSIZ: { etiket: TR.hesap.satir.YETERSIZ, renk: RENK.kirmizi },
 };
 
-export const UYARI_EK_ONLEM =
-  "Gerekli koruma seviyesi 'Seviye 1 + ek önlem': Seviye I koruma yarıçapına ek olarak, standardın öngördüğü ek koruma önlemleri ayrıca değerlendirilmelidir.";
-export const UYARI_YUKSEK_YAPI =
-  "Yapı yüksekliği 60 m'yi aşıyor: NF C 17-102'nin yüksek yapılara ilişkin ek hükümleri (yan darbelere karşı koruma) ayrıca değerlendirilmelidir.";
-
-const NEDEN_KOT_EKSIK = 'Kot verisi eksik (kot seviyesi veya yapı tanımı bulunamadı)';
-const NEDEN_YAPI_YUKSEK = 'Yapı, paratonerden daha yüksekte veya aynı boyda — korunamaz';
+/** Türkçe uyarı metinleri (dile göre: `m.hesap.uyariEkOnlem`, `m.hesap.uyariYuksekYapi`). */
+export const UYARI_EK_ONLEM = TR.hesap.uyariEkOnlem;
+export const UYARI_YUKSEK_YAPI = TR.hesap.uyariYuksekYapi;
 
 function gecersizSatir(pr: Paratoner, neden: string, gercekH?: number): ParatonerSatiri {
   const satir: ParatonerSatiri = { paratonerId: pr.id, paratonerIsim: pr.isim, gecerli: false, neden };
@@ -110,19 +109,19 @@ function gecersizSatir(pr: Paratoner, neden: string, gercekH?: number): Paratone
 }
 
 /** Bir paratoner–yapı çifti. Kontrol sırası v5 ile aynıdır. */
-function satirUret(pr: Paratoner, yapi: Yapi, proje: Proje, sutun: Seviye, model: GeometriModeli): ParatonerSatiri {
-  const engel = paratonerSorunlari(pr, proje).find((s) => s.kod !== 'DELTA_T_GECERSIZ');
+function satirUret(pr: Paratoner, yapi: Yapi, proje: Proje, sutun: Seviye, model: GeometriModeli, m: Metinler): ParatonerSatiri {
+  const engel = paratonerSorunlari(pr, proje, m).find((s) => s.kod !== 'DELTA_T_GECERSIZ');
   const gercekH = gercekHHesapla(pr, yapi, proje);
-  if (gercekH === null) return gecersizSatir(pr, NEDEN_KOT_EKSIK);
+  if (gercekH === null) return gecersizSatir(pr, m.hesap.nedenKotEksik);
   if (engel) return gecersizSatir(pr, engel.mesaj, gercekH);
-  if (gercekH < 2) return gecersizSatir(pr, gercekH <= 0 ? NEDEN_YAPI_YUKSEK : RP_MESAJLARI.H_2_ALTI, gercekH);
+  if (gercekH < 2) return gecersizSatir(pr, gercekH <= 0 ? m.hesap.nedenYapiYuksek : m.hesap.rp.H_2_ALTI, gercekH);
 
   const deltaT = etkinDeltaT(pr, proje);
-  const okuma = rpOku(gercekH, sutun, deltaT);
+  const okuma = rpOku(gercekH, sutun, deltaT, m);
   if (!okuma.tamam) return gecersizSatir(pr, okuma.mesaj, gercekH);
 
   const mesafe = model.mesafeler(pr, yapi.poligon);
-  if (!mesafe) return gecersizSatir(pr, 'Yapı poligonu geçersiz.', gercekH);
+  if (!mesafe) return gecersizSatir(pr, m.hesap.nedenPoligon, gercekH);
   const marjEnYakin = okuma.rp - mesafe.enYakin;
   const marjEnUzak = okuma.rp - mesafe.enUzak;
   const durumKod: SatirDurumu = marjEnYakin >= 0 && marjEnUzak >= 0 ? 'YETERLI' : marjEnYakin >= 0 ? 'KISMI' : 'YETERSIZ';
@@ -141,8 +140,8 @@ function satirUret(pr: Paratoner, yapi: Yapi, proje: Proje, sutun: Seviye, model
     marjEnYakin,
     marjEnUzak,
     durumKod,
-    durum: SATIR_ETIKETLERI[durumKod].etiket,
-    durumRenk: SATIR_ETIKETLERI[durumKod].renk,
+    durum: m.hesap.satir[durumKod],
+    durumRenk: SATIR_RENKLERI[durumKod],
   };
 }
 
@@ -162,35 +161,36 @@ function birincilSec(satirlar: ParatonerSatiri[]): ParatonerSatiri | null {
   return en;
 }
 
-function nihaiBelirle(gecerliSatirlar: ParatonerSatiri[], kapsama: KapsamaAnalizi, risk: RiskAnalizi): NihaiDurum {
+function nihaiBelirle(gecerliSatirlar: ParatonerSatiri[], kapsama: KapsamaAnalizi, risk: RiskAnalizi, m: Metinler): NihaiDurum {
+  const e = m.hesap.nihai;
   let nihai: NihaiDurum;
   if (gecerliSatirlar.length === 0) {
-    nihai = { kod: 'KORUYUCU_YOK', etiket: 'Koruyucu bulunamadı', renk: RENK.gri };
+    nihai = { kod: 'KORUYUCU_YOK', etiket: e.KORUYUCU_YOK, renk: RENK.gri };
   } else if (kapsama.geometriHatasi) {
-    nihai = { kod: 'GEOMETRI_HATASI', etiket: 'Geometri hatası', renk: RENK.kirmizi };
+    nihai = { kod: 'GEOMETRI_HATASI', etiket: e.GEOMETRI_HATASI, renk: RENK.kirmizi };
   } else if (kapsama.tamamenKorunuyorMu) {
     nihai = gecerliSatirlar.some((s) => s.durumKod === 'YETERLI')
-      ? { kod: 'YETERLI', etiket: 'Koruma yeterli', renk: RENK.yesil }
-      : { kod: 'YETERLI_KOMBINE', etiket: 'Koruma yeterli (birleşik)', renk: RENK.yesil };
+      ? { kod: 'YETERLI', etiket: e.YETERLI, renk: RENK.yesil }
+      : { kod: 'YETERLI_KOMBINE', etiket: e.YETERLI_KOMBINE, renk: RENK.yesil };
   } else if (kapsama.hicKorumaYokMu) {
-    nihai = { kod: 'YETERSIZ', etiket: 'Koruma yetersiz', renk: RENK.kirmizi };
+    nihai = { kod: 'YETERSIZ', etiket: e.YETERSIZ, renk: RENK.kirmizi };
   } else {
-    nihai = { kod: 'KISMI', etiket: `Kısmi koruma (${yuzde(kapsama.kapsamaOrani)}): açıkta alan var`, renk: RENK.kirmizi };
+    nihai = { kod: 'KISMI', etiket: e.KISMI(m.bicim.yuzde(kapsama.kapsamaOrani)), renk: RENK.kirmizi };
   }
 
   // Nd ≤ Nc: koruma isteğe bağlı.
   if (risk.istegeBagli) {
     if (nihai.kod === 'YETERSIZ' || nihai.kod === 'KISMI' || nihai.kod === 'KORUYUCU_YOK') {
-      return { kod: 'ISTEGE_BAGLI_DISINDA', etiket: 'Koruma isteğe bağlı (yapının tamamı korunmuyor)', renk: RENK.acikYesil };
+      return { kod: 'ISTEGE_BAGLI_DISINDA', etiket: e.ISTEGE_BAGLI_DISINDA, renk: RENK.acikYesil };
     }
     if (nihai.kod === 'YETERLI' || nihai.kod === 'YETERLI_KOMBINE') {
-      return { kod: 'ISTEGE_BAGLI_ICINDE', etiket: 'Koruma isteğe bağlı (yapının tamamı korunuyor)', renk: RENK.acikYesil };
+      return { kod: 'ISTEGE_BAGLI_ICINDE', etiket: e.ISTEGE_BAGLI_ICINDE, renk: RENK.acikYesil };
     }
   }
   return nihai;
 }
 
-function hesaplanamadi(yapi: Yapi, hatalar: string[]): YapiSonucu {
+function hesaplanamadi(yapi: Yapi, hatalar: string[], m: Metinler): YapiSonucu {
   return {
     yapiId: yapi.id,
     yapiIsim: yapi.isim,
@@ -200,7 +200,7 @@ function hesaplanamadi(yapi: Yapi, hatalar: string[]): YapiSonucu {
     satirlar: [],
     birincilParatonerId: null,
     kapsama: null,
-    nihai: { kod: 'HESAPLANAMADI', etiket: 'Hesaplanamadı', renk: RENK.gri },
+    nihai: { kod: 'HESAPLANAMADI', etiket: m.hesap.nihai.HESAPLANAMADI, renk: RENK.gri },
     hatalar,
     uyarilar: [],
   };
@@ -211,29 +211,27 @@ export function yapiyiHesapla(
   proje: Proje,
   paratonerler: Paratoner[] = hesabaGirenParatonerler(proje),
   model: GeometriModeli = ELIPSOIT_MODELI,
+  m: Metinler = TR,
 ): YapiSonucu {
-  const hatalar = yapiSorunlari(yapi, proje).map((s) => s.mesaj);
+  const hatalar = yapiSorunlari(yapi, proje, m).map((s) => s.mesaj);
   const deltaTsiz = deltaTsizParatonerler(proje, paratonerler);
   if (deltaTsiz.length) {
-    hatalar.unshift(
-      paratonerBazliDeltaTMi(proje)
-        ? `ΔT (paratoner yayılım süresi) seçilmemiş: ${deltaTsiz.map((p) => p.isim).join(', ')}.`
-        : 'ΔT (paratoner yayılım süresi) seçilmemiş.',
-    );
+    hatalar.unshift(paratonerBazliDeltaTMi(proje) ? m.hesap.deltaTYokParatoner(deltaTsiz.map((p) => p.isim).join(', ')) : m.hesap.deltaTYok);
   }
-  if (proje.deltaT_onay_gerekli) hatalar.unshift(DELTA_T_ONAY_MESAJI);
-  if (!nkGecerliMi(proje)) hatalar.unshift('Nk (yıldırımlı gün sayısı) girilmemiş.');
-  if (hatalar.length) return hesaplanamadi(yapi, hatalar);
+  if (proje.deltaT_onay_gerekli) hatalar.unshift(m.hesap.dogrulama.deltaTOnay);
+  if (!nkGecerliMi(proje)) hatalar.unshift(m.hesap.nkYok);
+  if (hatalar.length) return hesaplanamadi(yapi, hatalar, m);
 
   const { alan, cevre, Ae } = aeHesapla(yapi, model);
   const risk = yapiRiskAnalizi(
     { Ae, C1: yapi.C1 as number, C2: yapi.C2 as number, C3: yapi.C3 as number, C4: yapi.C4 as number, C5: yapi.C5 as number },
     proje.Nk,
+    m,
   );
-  if (!risk.sutun) return hesaplanamadi(yapi, ['Risk analizi geçersiz: Nd hesaplanamadı.']);
+  if (!risk.sutun) return hesaplanamadi(yapi, [m.hesap.riskGecersiz], m);
   const sutun = risk.sutun;
 
-  const satirlar = paratonerler.map((pr) => satirUret(pr, yapi, proje, sutun, model));
+  const satirlar = paratonerler.map((pr) => satirUret(pr, yapi, proje, sutun, model, m));
   const gecerliSatirlar = satirlar.filter((s) => s.gecerli);
   const birincil = birincilSec(satirlar);
 
@@ -247,11 +245,11 @@ export function yapiyiHesapla(
   if (!kapsama.tamamenKorunuyorMu && !kapsama.geometriHatasi && gecerliSatirlar.some((s) => s.durumKod === 'YETERLI')) {
     kapsama = tamKapsama(yapi.poligon);
   }
-  const nihai = nihaiBelirle(gecerliSatirlar, kapsama, risk);
+  const nihai = nihaiBelirle(gecerliSatirlar, kapsama, risk, m);
 
   const uyarilar: string[] = [];
-  if (risk.ekOnlemGerekli) uyarilar.push(UYARI_EK_ONLEM);
-  if ((yapi.H_m as number) > 60) uyarilar.push(UYARI_YUKSEK_YAPI);
+  if (risk.ekOnlemGerekli) uyarilar.push(m.hesap.uyariEkOnlem);
+  if ((yapi.H_m as number) > 60) uyarilar.push(m.hesap.uyariYuksekYapi);
 
   return {
     yapiId: yapi.id,
@@ -298,11 +296,12 @@ export function hesapGirdisiAyni(a: Proje, b: Proje): boolean {
   return true;
 }
 
-export function projeyiHesapla(proje: Proje, model: GeometriModeli = ELIPSOIT_MODELI): ProjeSonucu {
+/** `m`: sonuçtaki etiket ve mesajların dili (varsayılan Türkçe). */
+export function projeyiHesapla(proje: Proje, model: GeometriModeli = ELIPSOIT_MODELI, m: Metinler = TR): ProjeSonucu {
   const paratonerler = hesabaGirenParatonerler(proje);
   return {
-    dogrulama: projeyiDogrula(proje),
-    yapilar: proje.yapilar.map((yapi) => yapiyiHesapla(yapi, proje, paratonerler, model)),
+    dogrulama: projeyiDogrula(proje, m),
+    yapilar: proje.yapilar.map((yapi) => yapiyiHesapla(yapi, proje, paratonerler, model, m)),
   };
 }
 
@@ -310,11 +309,11 @@ export function projeyiHesapla(proje: Proje, model: GeometriModeli = ELIPSOIT_MO
  * Son hesabı hatırlayan `projeyiHesapla`: proje yalnızca hesaba girmeyen alanlarda değiştiyse
  * önceki sonucu (aynı nesneyi) döndürür.
  */
-export function onbellekliHesap(): (proje: Proje) => ProjeSonucu {
-  let onceki: { proje: Proje; sonuc: ProjeSonucu } | null = null;
-  return (proje) => {
-    const sonuc = onceki && hesapGirdisiAyni(onceki.proje, proje) ? onceki.sonuc : projeyiHesapla(proje);
-    onceki = { proje, sonuc };
+export function onbellekliHesap(): (proje: Proje, m?: Metinler) => ProjeSonucu {
+  let onceki: { proje: Proje; m: Metinler; sonuc: ProjeSonucu } | null = null;
+  return (proje, m = TR) => {
+    const sonuc = onceki && onceki.m === m && hesapGirdisiAyni(onceki.proje, proje) ? onceki.sonuc : projeyiHesapla(proje, ELIPSOIT_MODELI, m);
+    onceki = { proje, m, sonuc };
     return sonuc;
   };
 }

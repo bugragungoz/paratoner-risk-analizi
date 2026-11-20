@@ -2,6 +2,8 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import type { Metinler } from '../../dil';
+import { tr as TR } from '../../dil/tr';
 
 export function tauriMi(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -63,16 +65,16 @@ export function tarayicidaDosyaSec(kabul: string): Promise<File | null> {
 }
 
 /** Proje dosyası seçtirip okur; iptalde null. */
-export async function projeDosyasiSec(boyutSiniri: number): Promise<SecilenDosya | null> {
+export async function projeDosyasiSec(boyutSiniri: number, m: Metinler = TR): Promise<SecilenDosya | null> {
   if (tauriMi()) {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const yol = await open({
       multiple: false,
       directory: false,
       filters: [
-        { name: 'Paratoner projesi', extensions: ['ptproj', 'json'] },
-        { name: 'Yeni biçim (.ptproj)', extensions: ['ptproj'] },
-        { name: 'Eski sürüm (.json)', extensions: ['json'] },
+        { name: m.dosyaIslem.filtreProje, extensions: ['ptproj', 'json'] },
+        { name: m.dosyaIslem.filtreYeni, extensions: ['ptproj'] },
+        { name: m.dosyaIslem.filtreEski, extensions: ['json'] },
       ],
     });
     if (typeof yol !== 'string') return null;
@@ -80,7 +82,7 @@ export async function projeDosyasiSec(boyutSiniri: number): Promise<SecilenDosya
   }
   const dosya = await tarayicidaDosyaSec('.ptproj,.json,application/json');
   if (!dosya) return null;
-  if (dosya.size > boyutSiniri) throw new Error('Dosya bir proje dosyası için fazla büyük.');
+  if (dosya.size > boyutSiniri) throw new Error(m.dosyaIslem.projeBuyuk);
   return { yol: null, ad: dosya.name, icerik: await dosya.text() };
 }
 
@@ -88,7 +90,7 @@ export async function projeDosyasiSec(boyutSiniri: number): Promise<SecilenDosya
 export const KML_DOSYA_SINIRI = 30 * 1024 * 1024;
 
 /** KML ya da KMZ dosyası seçtirip ham baytlarını okur; iptalde null. */
-export async function kmlDosyasiSec(filtreAdi: string): Promise<{ ad: string; bayt: Uint8Array } | null> {
+export async function kmlDosyasiSec(filtreAdi: string, m: Metinler = TR): Promise<{ ad: string; bayt: Uint8Array } | null> {
   if (tauriMi()) {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const yol = await open({ multiple: false, directory: false, filters: [{ name: filtreAdi, extensions: ['kml', 'kmz'] }] });
@@ -98,7 +100,7 @@ export async function kmlDosyasiSec(filtreAdi: string): Promise<{ ad: string; ba
   }
   const dosya = await tarayicidaDosyaSec('.kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz');
   if (!dosya) return null;
-  if (dosya.size > KML_DOSYA_SINIRI) throw new Error('Dosya içe aktarmak için fazla büyük (en çok 30 MB).');
+  if (dosya.size > KML_DOSYA_SINIRI) throw new Error(m.dosyaIslem.kmlBuyuk);
   return { ad: dosya.name, bayt: new Uint8Array(await dosya.arrayBuffer()) };
 }
 
@@ -106,7 +108,7 @@ export async function kmlDosyasiSec(filtreAdi: string): Promise<{ ad: string; ba
 export const DXF_DOSYA_SINIRI = 100 * 1024 * 1024;
 
 /** Altlık için DXF dosyası seçtirip okur; iptalde null. Masaüstünde yol da döner (proje onu saklar). */
-export async function dxfDosyasiSec(filtreAdi: string): Promise<{ yol: string | null; ad: string; bayt: Uint8Array } | null> {
+export async function dxfDosyasiSec(filtreAdi: string, m: Metinler = TR): Promise<{ yol: string | null; ad: string; bayt: Uint8Array } | null> {
   if (tauriMi()) {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const yol = await open({ multiple: false, directory: false, filters: [{ name: filtreAdi, extensions: ['dxf'] }] });
@@ -115,7 +117,7 @@ export async function dxfDosyasiSec(filtreAdi: string): Promise<{ yol: string | 
   }
   const dosya = await tarayicidaDosyaSec('.dxf,image/vnd.dxf,application/dxf');
   if (!dosya) return null;
-  if (dosya.size > DXF_DOSYA_SINIRI) throw new Error('Dosya altlık için fazla büyük (en çok 100 MB).');
+  if (dosya.size > DXF_DOSYA_SINIRI) throw new Error(m.dosyaIslem.dxfBuyuk);
   return { yol: null, ad: dosya.name, bayt: new Uint8Array(await dosya.arrayBuffer()) };
 }
 
@@ -271,3 +273,8 @@ export const pencere = {
     }
   },
 };
+
+/** Arayüz dilini Rust tarafına bildirir: dosya ve harita servisi mesajları ile Google/Nominatim istekleri bu dilde olur. */
+export function dilAyarla(dil: string): void {
+  if (tauriMi()) invoke('dil_ayarla', { dil }).catch(() => {});
+}

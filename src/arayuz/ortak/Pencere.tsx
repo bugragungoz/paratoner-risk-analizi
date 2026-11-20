@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useEtkilesim } from './Etkilesim';
 
 interface Props {
   acik: boolean;
@@ -16,6 +17,7 @@ interface Props {
 
 /** Ortak pencere: Esc ve dışarı tıklama ile kapanır, odağı içinde tutar. */
 export function Pencere({ acik, kapat, baslik, children, boyut = 'normal', ustSag, saydam }: Props) {
+  const { etiketler } = useEtkilesim();
   return (
     <Dialog.Root open={acik} onOpenChange={(a) => !a && kapat()}>
       <Dialog.Portal>
@@ -26,7 +28,7 @@ export function Pencere({ acik, kapat, baslik, children, boyut = 'normal', ustSa
             <div className="pencere-ust-sag">
               {ustSag}
               <Dialog.Close asChild>
-                <button className="ikon-buton" title="Kapat (Esc)">
+                <button className="ikon-buton" title={etiketler.kapat} aria-label={etiketler.kapat}>
                   <X size={15} />
                 </button>
               </Dialog.Close>

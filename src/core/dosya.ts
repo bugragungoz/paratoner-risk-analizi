@@ -3,6 +3,8 @@
 // Bozuk veya eksik bir dosya, hangi alanın hatalı olduğu söylenerek REDDEDİLİR; mühendislik
 // verisinde sessizce öğe atıp devam etmek yanlış sonuca götürebilir.
 
+import type { Metinler } from '../dil';
+import { tr as TR } from '../dil/tr';
 import type { AltlikAyari, AltlikHizalamasi } from './altlik';
 import { TUREF_DILIMLERI, type TurefDilimi } from './koordinat';
 import { MALZEMELER, standartCMi, type CAdi } from './sabitler';
@@ -41,44 +43,8 @@ const hata = (mesaj: string): never => {
 const nesneMi = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 const sayiMi = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
 
-function metin(x: unknown, yer: string, varsayilan?: string): string {
-  if (typeof x === 'string') return x.slice(0, 500);
-  if (x === undefined && varsayilan !== undefined) return varsayilan;
-  return hata(`${yer} metin olmalı.`);
-}
-
-function sayi(x: unknown, yer: string): number {
-  return sayiMi(x) ? x : hata(`${yer} geçerli bir sayı olmalı.`);
-}
-
-function sayiYaDaBos(x: unknown, yer: string): number | null {
-  if (x === null || x === undefined || x === '') return null;
-  return sayi(x, yer);
-}
-
 function mantiksal(x: unknown, varsayilan: boolean): boolean {
   return typeof x === 'boolean' ? x : varsayilan;
-}
-
-function kimlik(x: unknown, yer: string, kullanilan: Set<string>): string {
-  const id = metin(x, `${yer} kimliği`);
-  if (!id) hata(`${yer} kimliği boş.`);
-  if (kullanilan.has(id)) hata(`${yer} kimliği (${id}) birden fazla öğede kullanılmış.`);
-  kullanilan.add(id);
-  return id;
-}
-
-function nokta(x: unknown, yer: string): LatLng {
-  if (!nesneMi(x)) return hata(`${yer} koordinat olmalı.`);
-  const lat = sayi(x.lat, `${yer} enlemi`);
-  const lng = sayi(x.lng, `${yer} boylamı`);
-  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) hata(`${yer} koordinatı geçerli aralıkta değil.`);
-  return { lat, lng };
-}
-
-function noktaListesi(x: unknown, yer: string): LatLng[] {
-  if (!Array.isArray(x)) return hata(`${yer} köşe listesi olmalı.`);
-  return x.map((n, i) => nokta(n, `${yer}, köşe ${i + 1}`));
 }
 
 function pozitifListe(x: unknown, varsayilan: number[]): number[] {
@@ -94,35 +60,76 @@ function c2Secimi(x: unknown): C2Secimi | null {
   return yapi && cati ? { yapi, cati } : null;
 }
 
-function kotOku(x: unknown, i: number, kimlikler: Set<string>): KotSeviyesi {
-  const yer = `Kot seviyesi #${i + 1}`;
-  if (!nesneMi(x)) return hata(`${yer} geçersiz.`);
+type DosyaMetinleri = Metinler['dosya'];
+
+/** Alan denetleyicileri; hata mesajları `d` sözlüğünün dilindedir. */
+function denetleyiciler(d: DosyaMetinleri) {
+  function metin(x: unknown, yer: string, varsayilan?: string): string {
+    if (typeof x === 'string') return x.slice(0, 500);
+    if (x === undefined && varsayilan !== undefined) return varsayilan;
+    return hata(d.metinOlmali(yer));
+  }
+  function sayi(x: unknown, yer: string): number {
+    return sayiMi(x) ? x : hata(d.sayiOlmali(yer));
+  }
+  function sayiYaDaBos(x: unknown, yer: string): number | null {
+    if (x === null || x === undefined || x === '') return null;
+    return sayi(x, yer);
+  }
+  function kimlik(x: unknown, yer: string, kullanilan: Set<string>): string {
+    const id = metin(x, d.kimligi(yer));
+    if (!id) hata(d.kimlikBos(yer));
+    if (kullanilan.has(id)) hata(d.kimlikTekrar(yer, id));
+    kullanilan.add(id);
+    return id;
+  }
+  function nokta(x: unknown, yer: string): LatLng {
+    if (!nesneMi(x)) return hata(d.koordinatOlmali(yer));
+    const lat = sayi(x.lat, d.enlemi(yer));
+    const lng = sayi(x.lng, d.boylami(yer));
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) hata(d.koordinatAralikDisi(yer));
+    return { lat, lng };
+  }
+  function noktaListesi(x: unknown, yer: string): LatLng[] {
+    if (!Array.isArray(x)) return hata(d.koseListesiOlmali(yer));
+    return x.map((n, i) => nokta(n, d.kose(yer, i + 1)));
+  }
+  return { d, metin, sayi, sayiYaDaBos, kimlik, nokta, noktaListesi };
+}
+
+type Denetleyiciler = ReturnType<typeof denetleyiciler>;
+
+function kotOku(o: Denetleyiciler, x: unknown, i: number, kimlikler: Set<string>): KotSeviyesi {
+  const { d } = o;
+  const yer = d.kotNo(i + 1);
+  if (!nesneMi(x)) return hata(d.gecersiz(yer));
   return {
-    id: kimlik(x.id, yer, kimlikler),
-    isim: metin(x.isim, `${yer} adı`, ''),
-    taban_kottan_yukseklik_m: sayi(x.taban_kottan_yukseklik_m, `${yer} yüksekliği`),
-    aciklama: metin(x.aciklama, `${yer} açıklaması`, ''),
+    id: o.kimlik(x.id, yer, kimlikler),
+    isim: o.metin(x.isim, d.adi(yer), ''),
+    taban_kottan_yukseklik_m: o.sayi(x.taban_kottan_yukseklik_m, d.yuksekligi(yer)),
+    aciklama: o.metin(x.aciklama, d.aciklamasi(yer), ''),
   };
 }
 
-function yapiOku(x: unknown, i: number, kimlikler: Set<string>): Yapi {
-  if (!nesneMi(x)) return hata(`Yapı #${i + 1} geçersiz.`);
-  const yer = `Yapı "${typeof x.isim === 'string' ? x.isim : i + 1}"`;
+function yapiOku(o: Denetleyiciler, x: unknown, i: number, kimlikler: Set<string>): Yapi {
+  const { d } = o;
+  if (!nesneMi(x)) return hata(d.gecersiz(d.yapiNo(i + 1)));
+  const yer = d.yapi(typeof x.isim === 'string' ? x.isim : String(i + 1));
   const yapi: Yapi = {
-    id: kimlik(x.id, yer, kimlikler),
-    isim: metin(x.isim, `${yer} adı`, ''),
-    tip: metin(x.tip, `${yer} tipi`, 'diger'),
-    poligon: noktaListesi(x.poligon, yer),
-    kot_seviyesi_id: metin(x.kot_seviyesi_id, `${yer} kot bağlantısı`, ''),
-    H_m: sayiYaDaBos(x.H_m, `${yer} yüksekliği (H)`),
-    L_m: sayiYaDaBos(x.L_m, `${yer} boyu (L)`),
-    W_m: sayiYaDaBos(x.W_m, `${yer} eni (W)`),
+    id: o.kimlik(x.id, yer, kimlikler),
+    isim: o.metin(x.isim, d.adi(yer), ''),
+    tip: o.metin(x.tip, d.tipi(yer), 'diger'),
+    poligon: o.noktaListesi(x.poligon, yer),
+    kot_seviyesi_id: o.metin(x.kot_seviyesi_id, d.kotBaglantisi(yer), ''),
+    H_m: o.sayiYaDaBos(x.H_m, d.yukseklikH(yer)),
+    L_m: o.sayiYaDaBos(x.L_m, d.boyuL(yer)),
+    W_m: o.sayiYaDaBos(x.W_m, d.eniW(yer)),
     manuelBoyut: mantiksal(x.manuelBoyut, false),
-    C1: sayiYaDaBos(x.C1, `${yer} C1`),
-    C2: sayiYaDaBos(x.C2, `${yer} C2`),
-    C3: sayiYaDaBos(x.C3, `${yer} C3`),
-    C4: sayiYaDaBos(x.C4, `${yer} C4`),
-    C5: sayiYaDaBos(x.C5, `${yer} C5`),
+    C1: o.sayiYaDaBos(x.C1, `${yer} C1`),
+    C2: o.sayiYaDaBos(x.C2, `${yer} C2`),
+    C3: o.sayiYaDaBos(x.C3, `${yer} C3`),
+    C4: o.sayiYaDaBos(x.C4, `${yer} C4`),
+    C5: o.sayiYaDaBos(x.C5, `${yer} C5`),
     C2_secim: c2Secimi(x.C2_secim),
     kritik_mi: mantiksal(x.kritik_mi, false),
     gorunur_mu: mantiksal(x.gorunur_mu, true),
@@ -130,39 +137,40 @@ function yapiOku(x: unknown, i: number, kimlikler: Set<string>): Yapi {
   return yapi;
 }
 
-function paratonerOku(x: unknown, i: number, kimlikler: Set<string>): Paratoner {
-  if (!nesneMi(x)) return hata(`Paratoner #${i + 1} geçersiz.`);
-  const yer = `Paratoner "${typeof x.isim === 'string' ? x.isim : i + 1}"`;
-  const konum = nokta(x, yer);
-  const yapiId = x.yapi_id === null || x.yapi_id === undefined || x.yapi_id === '' ? null : metin(x.yapi_id, `${yer} yapı bağlantısı`);
-  const kotId = yapiId ? null : x.kot_seviyesi_id === null || x.kot_seviyesi_id === undefined ? null : metin(x.kot_seviyesi_id, `${yer} kot bağlantısı`);
+function paratonerOku(o: Denetleyiciler, x: unknown, i: number, kimlikler: Set<string>): Paratoner {
+  const { d } = o;
+  if (!nesneMi(x)) return hata(d.gecersiz(d.paratonerNo(i + 1)));
+  const yer = d.paratoner(typeof x.isim === 'string' ? x.isim : String(i + 1));
+  const konum = o.nokta(x, yer);
+  const yapiId = x.yapi_id === null || x.yapi_id === undefined || x.yapi_id === '' ? null : o.metin(x.yapi_id, d.yapiBaglantisi(yer));
+  const kotId = yapiId ? null : x.kot_seviyesi_id === null || x.kot_seviyesi_id === undefined ? null : o.metin(x.kot_seviyesi_id, d.kotBaglantisi(yer));
   return {
-    id: kimlik(x.id, yer, kimlikler),
-    isim: metin(x.isim, `${yer} adı`, ''),
+    id: o.kimlik(x.id, yer, kimlikler),
+    isim: o.metin(x.isim, d.adi(yer), ''),
     lat: konum.lat,
     lng: konum.lng,
     kot_seviyesi_id: kotId,
     yapi_id: yapiId,
-    mast_yuksekligi_m: sayi(x.mast_yuksekligi_m, `${yer} mast yüksekliği`),
+    mast_yuksekligi_m: o.sayi(x.mast_yuksekligi_m, d.mastYuksekligi(yer)),
     aktif_mi: mantiksal(x.aktif_mi, true),
     gorunur_mu: mantiksal(x.gorunur_mu, true),
     h_esikleri: pozitifListe(x.h_esikleri, [2, 3, 4, 5]),
-    deltaT: sayiYaDaBos(x.deltaT, `${yer} ΔT`),
-    cihaz: metin(x.cihaz, `${yer} cihaz bilgisi`, ''),
+    deltaT: o.sayiYaDaBos(x.deltaT, `${yer} ΔT`),
+    cihaz: o.metin(x.cihaz, d.cihazBilgisi(yer), ''),
   };
 }
 
-function revizyonlarOku(x: unknown): Revizyon[] {
+function revizyonlarOku(o: Denetleyiciler, x: unknown): Revizyon[] {
+  const { d } = o;
   if (x === undefined || x === null) return [];
-  if (!Array.isArray(x)) return hata('Revizyon listesi geçersiz.');
+  if (!Array.isArray(x)) return hata(d.revizyonListesi);
   return x.slice(0, 50).map((r, i) => {
-    const yer = `Revizyon #${i + 1}`;
-    if (!nesneMi(r)) return hata(`${yer} geçersiz.`);
-    return { no: metin(r.no, `${yer} numarası`, ''), tarih: metin(r.tarih, `${yer} tarihi`, ''), aciklama: metin(r.aciklama, `${yer} açıklaması`, '') };
+    const yer = d.revizyonNo(i + 1);
+    if (!nesneMi(r)) return hata(d.gecersiz(yer));
+    return { no: o.metin(r.no, d.numarasi(yer), ''), tarih: o.metin(r.tarih, d.tarihi(yer), ''), aciklama: o.metin(r.aciklama, d.aciklamasi(yer), '') };
   });
 }
 
-/** Ham proje nesnesini doğrular ve eksik alanları güvenli varsayılanlarla tamamlar. */
 /** Altlık ayarı (yalnızca görsel): geçersizse yok sayılır, projeyi açmayı engellemez. */
 function altlikOku(x: unknown): AltlikAyari | null {
   if (!nesneMi(x) || !nesneMi(x.hizalama)) return null;
@@ -186,29 +194,32 @@ function altlikOku(x: unknown): AltlikAyari | null {
   };
 }
 
-export function projeyiDogrulaVeTamamla(ham: unknown): Proje {
-  if (!nesneMi(ham)) return hata('Dosya bir proje içermiyor.');
+/** Ham proje nesnesini doğrular ve eksik alanları güvenli varsayılanlarla tamamlar. Hata mesajları `m` dilindedir. */
+export function projeyiDogrulaVeTamamla(ham: unknown, m: Metinler = TR): Proje {
+  const d = m.dosya;
+  const o = denetleyiciler(d);
+  if (!nesneMi(ham)) return hata(d.projeYok);
   for (const alan of ['kot_seviyeleri', 'yapilar', 'paratonerler'] as const) {
-    if (!Array.isArray(ham[alan])) hata('Dosyada yapı, paratoner veya kot listesi yok; bir paratoner projesi değil.');
+    if (!Array.isArray(ham[alan])) hata(d.listeYok);
   }
   const kimlikler = new Set<string>();
   const deltaTModu: DeltaTModu = ham.deltaT_modu === 'paratoner' ? 'paratoner' : 'proje';
   const proje: Proje = {
     id: typeof ham.id === 'string' && ham.id ? ham.id : `proj_${Date.now().toString(36)}`,
-    isim: metin(ham.isim, 'Proje adı', 'Proje'),
-    olusturma_tarihi: metin(ham.olusturma_tarihi, 'Oluşturma tarihi', new Date().toISOString()),
-    Nk: sayiYaDaBos(ham.Nk, 'Nk'),
-    deltaT: sayiYaDaBos(ham.deltaT, 'Proje ΔT'),
+    isim: o.metin(ham.isim, d.projeAdi, d.varsayilanProjeAdi),
+    olusturma_tarihi: o.metin(ham.olusturma_tarihi, d.olusturmaTarihi, new Date().toISOString()),
+    Nk: o.sayiYaDaBos(ham.Nk, 'Nk'),
+    deltaT: o.sayiYaDaBos(ham.deltaT, d.projeDeltaT),
     deltaT_modu: deltaTModu,
-    tesis_adresi: metin(ham.tesis_adresi, 'Tesis adresi', ''),
-    cihaz: metin(ham.cihaz, 'Cihaz bilgisi', ''),
-    rapor_no: metin(ham.rapor_no, 'Rapor numarası', ''),
-    revizyonlar: revizyonlarOku(ham.revizyonlar),
+    tesis_adresi: o.metin(ham.tesis_adresi, d.tesisAdresi, ''),
+    cihaz: o.metin(ham.cihaz, d.cihaz, ''),
+    rapor_no: o.metin(ham.rapor_no, d.raporNumarasi, ''),
+    revizyonlar: revizyonlarOku(o, ham.revizyonlar),
     h_esikleri_varsayilan: pozitifListe(ham.h_esikleri_varsayilan, [2, 3, 4, 5]),
-    parsel_siniri: ham.parsel_siniri === null || ham.parsel_siniri === undefined ? null : noktaListesi(ham.parsel_siniri, 'Parsel sınırı'),
-    kot_seviyeleri: (ham.kot_seviyeleri as unknown[]).map((k, i) => kotOku(k, i, kimlikler)),
-    yapilar: (ham.yapilar as unknown[]).map((y, i) => yapiOku(y, i, kimlikler)),
-    paratonerler: (ham.paratonerler as unknown[]).map((p, i) => paratonerOku(p, i, kimlikler)),
+    parsel_siniri: ham.parsel_siniri === null || ham.parsel_siniri === undefined ? null : o.noktaListesi(ham.parsel_siniri, d.parselSiniri),
+    kot_seviyeleri: (ham.kot_seviyeleri as unknown[]).map((k, i) => kotOku(o, k, i, kimlikler)),
+    yapilar: (ham.yapilar as unknown[]).map((y, i) => yapiOku(o, y, i, kimlikler)),
+    paratonerler: (ham.paratonerler as unknown[]).map((p, i) => paratonerOku(o, p, i, kimlikler)),
   };
   if (ham.deltaT_onay_gerekli === true) proje.deltaT_onay_gerekli = true;
   for (const alan of ['harita_merkez_lat', 'harita_merkez_lng', 'harita_zoom'] as const) {
@@ -219,7 +230,7 @@ export function projeyiDogrulaVeTamamla(ham: unknown): Proje {
   // Yalnızca DXF çıktısı için: geçersizse projeyi açmayı engellemez, yok sayılır.
   if (nesneMi(ham.yerel_orijin)) {
     try {
-      proje.yerel_orijin = nokta(ham.yerel_orijin, 'Yerel başlangıç noktası');
+      proje.yerel_orijin = o.nokta(ham.yerel_orijin, d.yerelOrijin);
     } catch {
       // yok say
     }
@@ -238,43 +249,40 @@ export function standartDisiCYapilari(proje: Proje): string[] {
  * Proje dosyasını okur. Yeni biçimi (.ptproj) ve eski v5 ham JSON'unu tanır.
  * v5'ten aktarılan ve ΔT'si 60 µs olan projelerde ΔT onayı istenir.
  */
-export function projeDosyasiOku(metinIcerik: string): ProjeOkumaSonucu {
-  if (metinIcerik.length > PROJE_DOSYA_SINIRI) hata('Dosya bir proje dosyası için fazla büyük.');
+export function projeDosyasiOku(metinIcerik: string, m: Metinler = TR): ProjeOkumaSonucu {
+  if (metinIcerik.length > PROJE_DOSYA_SINIRI) hata(m.dosya.cokBuyuk);
   let ham: unknown;
   try {
     ham = JSON.parse(metinIcerik.replace(/^﻿/, ''));
   } catch {
-    return hata('Dosya okunamadı: geçerli bir JSON değil.');
+    return hata(m.dosya.jsonDegil);
   }
-  return projeVerisiOku(ham);
+  return projeVerisiOku(ham, m);
 }
 
 /** Ayrıştırılmış veriden (dosya ya da tarayıcı belleği) proje okur. */
-export function projeVerisiOku(ham: unknown): ProjeOkumaSonucu {
+export function projeVerisiOku(ham: unknown, m: Metinler = TR): ProjeOkumaSonucu {
+  const d = m.dosya;
   const uyarilar: string[] = [];
   let projeHam: unknown = ham;
   let eskiSurumdenAktarildi = false;
 
   if (nesneMi(ham) && ham.bicim === PROJE_DOSYA_BICIMI) {
-    const surum = sayi(ham.surum, 'Dosya sürümü');
-    if (surum > PROJE_DOSYA_SURUMU) hata('Bu dosya programın daha yeni bir sürümüyle kaydedilmiş. Programı güncelleyin.');
+    const surum = denetleyiciler(d).sayi(ham.surum, d.dosyaSurumu);
+    if (surum > PROJE_DOSYA_SURUMU) hata(d.yeniSurum);
     projeHam = ham.proje;
   } else {
     eskiSurumdenAktarildi = true;
   }
 
-  const proje = projeyiDogrulaVeTamamla(projeHam);
+  const proje = projeyiDogrulaVeTamamla(projeHam, m);
 
   if (eskiSurumdenAktarildi && proje.deltaT === 60) {
     proje.deltaT_onay_gerekli = true;
-    uyarilar.push(
-      'Bu proje programın eski sürümünden aktarıldı. Eski sürüm ΔT değerini kendiliğinden 60 µs olarak kaydediyordu; kullandığınız paratonerin ΔT değerini onaylayana kadar hesap yapılmaz.',
-    );
+    uyarilar.push(d.eskiSurumDeltaT);
   }
   const standartDisi = standartDisiCYapilari(proje);
-  if (standartDisi.length) {
-    uyarilar.push(`${standartDisi.join(', ')}: standart dışı C katsayısı var. Bu yapılar, katsayılar standart değerlerden yeniden seçilene kadar hesaplanmaz.`);
-  }
+  if (standartDisi.length) uyarilar.push(d.standartDisiC(standartDisi.join(', ')));
   return { proje, eskiSurumdenAktarildi, uyarilar };
 }
 

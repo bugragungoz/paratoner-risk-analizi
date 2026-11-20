@@ -2,10 +2,13 @@
 // Esc ve dışarı tıklama etkisizdir; kabul etmeyen kullanıcı programı kapatır.
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { KULLANIM_KOSULLARI, LISANS_ACIKLAMASI, TELIF } from '../ortak/yasal';
+import { TELIF } from '../ortak/yasal';
 import { pencere, tauriMi } from '../platform/tauri';
+import { useMetinler } from '../ortak/useMetinler';
 
 export function KosullarPenceresi({ kabulEt }: { kabulEt: () => void }) {
+  const m = useMetinler();
+  const t = m.kosullar;
   return (
     <Dialog.Root open>
       <Dialog.Portal>
@@ -18,30 +21,30 @@ export function KosullarPenceresi({ kabulEt }: { kabulEt: () => void }) {
           onInteractOutside={(e) => e.preventDefault()}
         >
           <div className="pencere-ustbar">
-            <Dialog.Title className="pencere-baslik">Kullanım koşulları ve sorumluluk reddi</Dialog.Title>
+            <Dialog.Title className="pencere-baslik">{t.baslik}</Dialog.Title>
           </div>
           <div className="pencere-govde">
             <div className="form-dikey">
-              <p className="ipucu">Programı kullanmadan önce aşağıdaki koşulları okuyun. Bu metne daha sonra Yardım › Hakkında penceresinden ulaşabilirsiniz.</p>
+              <p className="ipucu">{t.giris}</p>
               <dl className="kosul-listesi">
-                {KULLANIM_KOSULLARI.map((m) => (
-                  <div key={m.baslik}>
-                    <dt>{m.baslik}</dt>
-                    <dd>{m.metin}</dd>
+                {m.yasal.kosullar.map((k) => (
+                  <div key={k.baslik}>
+                    <dt>{k.baslik}</dt>
+                    <dd>{k.metin}</dd>
                   </div>
                 ))}
               </dl>
               <p className="ipucu-kucuk">
-                {TELIF}. {LISANS_ACIKLAMASI}
+                {TELIF}. {m.yasal.lisansAciklamasi}
               </p>
               <div className="pencere-alt-butonlar">
                 {tauriMi() && (
                   <button type="button" className="ikincil-buton" onClick={() => pencere.kapat()}>
-                    Kabul etmiyorum, kapat
+                    {t.reddet}
                   </button>
                 )}
                 <button type="button" className="buton-birincil" onClick={kabulEt} autoFocus>
-                  Okudum, kabul ediyorum
+                  {t.kabul}
                 </button>
               </div>
             </div>

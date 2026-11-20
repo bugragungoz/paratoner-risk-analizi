@@ -40,6 +40,8 @@ export function haritaSekliniSusle(
     atif: string;
     /** Google Maps logosu (Google katmanında): ölçek kutusunun üstüne, 18 px yükseklikte. */
     logo?: HTMLImageElement | null;
+    /** Kuzey okunun harfi (Türkçe K, İngilizce N). */
+    kuzey?: string;
   },
 ): void {
   const ctx = tuval.getContext('2d');
@@ -66,7 +68,7 @@ export function haritaSekliniSusle(
   ctx.fill();
   ctx.font = yazi(10, true);
   ctx.textAlign = 'center';
-  ctx.fillText('K', kx, ky + r - 6 * o);
+  ctx.fillText(s.kuzey ?? 'K', kx, ky + r - 6 * o);
 
   // Ölçek çubuğu (sol alt)
   const olcek = yuvarlakOlcek(s.metrePerPx, 140);

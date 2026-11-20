@@ -7,9 +7,12 @@ import type { LatLng } from '../../core';
 import { useProje } from '../durum/ProjeSaglayici';
 import { streetviewAdresi } from '../harita/servisler';
 import { disBaglantiAc } from '../platform/tauri';
+import { useMetinler } from '../ortak/useMetinler';
 
 export function StreetViewPaneli({ konum, kapat, ayarlariAc }: { konum: LatLng; kapat: () => void; ayarlariAc: () => void }) {
   const { haritaAnahtarlari } = useProje();
+  const m = useMetinler();
+  const t = m.streetView;
   const [yanit, setYanit] = useState<{ konum: string; adres?: string; hata?: string } | null>(null);
   const konumAnahtari = `${konum.lat},${konum.lng}`;
   // Eski konumun yanıtı yeni konumda gösterilmez.
@@ -38,28 +41,28 @@ export function StreetViewPaneli({ konum, kapat, ayarlariAc }: { konum: LatLng; 
           {konum.lat.toFixed(5)}, {konum.lng.toFixed(5)}
         </span>
         <div className="satir-icinde">
-          <button className="ikon-buton" onClick={() => disBaglantiAc(disUrl)} title="Tarayıcıda aç" aria-label="Tarayıcıda aç">
+          <button className="ikon-buton" onClick={() => disBaglantiAc(disUrl)} title={t.tarayicidaAc} aria-label={t.tarayicidaAc}>
             <ExternalLink size={13} />
           </button>
           <button className="mini-buton" onClick={kapat}>
-            Kapat
+            {m.ortak.kapat}
           </button>
         </div>
       </div>
       {!haritaAnahtarlari.google ? (
         <div className="streetview-not">
-          Uygulama içinde Street View için Google anahtarı gerekiyor (Maps Embed API, ücretsiz).{' '}
+          {t.anahtarGerekli}{' '}
           <button className="baglanti-buton" onClick={ayarlariAc}>
-            Harita servisleri ayarları →
+            {t.ayarlar}
           </button>
           <br />
-          Anahtar olmadan da yukarıdaki düğmeyle Google Haritalar'da açabilirsiniz.
+          {t.anahtarsiz}
         </div>
       ) : hata ? (
         <div className="streetview-not">{hata}</div>
       ) : (
         <>
-          <div className="streetview-not">Turuncu işaret tıkladığınız noktadır; Google en yakın kapsama noktasından görüntü gösterebilir. İşareti sürükleyerek konumu değiştirebilirsiniz.</div>
+          <div className="streetview-not">{t.not}</div>
           {adres && <iframe title="Street View" src={adres} className="streetview-iframe" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />}
         </>
       )}

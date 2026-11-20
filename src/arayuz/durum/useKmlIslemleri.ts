@@ -35,7 +35,7 @@ export function useKmlIslemleri() {
 
   const iceAktar = useCallback(async () => {
     try {
-      const secilen = await kmlDosyasiSec(m.kml.dosyaFiltresi);
+      const secilen = await kmlDosyasiSec(m.kml.dosyaFiltresi, m);
       if (!secilen) return;
       const belge = kmlCoz(await kmlMetni(secilen.bayt));
       if (!belge.ogeler.some((o) => o.geometri.tur !== 'cizgi' && o.veri.pt_tur !== 'rp_daire')) {
@@ -44,7 +44,7 @@ export function useKmlIslemleri() {
       }
       setOnizleme({ belge, dosyaAdi: secilen.ad });
     } catch (e) {
-      const neden = e instanceof KmlHatasi ? m.kml.xmlHatasi : e instanceof KmzBosHatasi ? m.kml.kmzBos : hataMetni(e);
+      const neden = e instanceof KmlHatasi ? (e.kod === 'XML' ? m.kml.xmlHatasi : m.kml.ogeYok) : e instanceof KmzBosHatasi ? m.kml.kmzBos : hataMetni(e);
       bildir(m.kml.okunamadi(neden), 'hata');
     }
   }, [m, bildir]);

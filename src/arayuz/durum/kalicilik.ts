@@ -4,6 +4,8 @@
 import { get, set } from 'idb-keyval';
 import { PROJE_UZANTISI, projeDosyasiNesnesi, projeDosyasiOku, projeDosyasiYaz, projeVerisiOku, type Proje, type ProjeOkumaSonucu } from '../../core';
 import { guvenliDosyaAdi } from '../platform/tauri';
+import type { Metinler } from '../../dil';
+import { tr as TR } from '../../dil/tr';
 
 export const UYGULAMA = `Paratoner Risk Analizi ${__UYGULAMA_SURUMU__}`;
 
@@ -50,8 +52,8 @@ export function kayitIcerigi(proje: Proje, simdi?: Date): string {
  * Kaydet yalnızca yeni biçimdeki .ptproj dosyasının üzerine yazar; eski sürümün .json dosyası
  * eski programla açılabilsin diye korunur (ilk Kaydet, yeni dosya ister).
  */
-export function dosyaIceriginiAc(icerik: string, yol: string | null, ad: string, kurtarma = false): AcilanProje {
-  const okuma = projeDosyasiOku(icerik);
+export function dosyaIceriginiAc(icerik: string, yol: string | null, ad: string, kurtarma = false, m: Metinler = TR): AcilanProje {
+  const okuma = projeDosyasiOku(icerik, m);
   const yeniBicim = !okuma.eskiSurumdenAktarildi && yol !== null && ptprojMu(yol);
   return {
     ...okuma,
@@ -79,30 +81,30 @@ export interface OturumYuklemeSonucu {
 }
 
 /** Son çalışma oturumunu yükler; yoksa eski sürümün oturumunu aktarır. */
-export async function oturumYukle(): Promise<OturumYuklemeSonucu> {
+export async function oturumYukle(m: Metinler = TR): Promise<OturumYuklemeSonucu> {
   let hata: string | null = null;
   try {
     const kayit = (await get(OTURUM_ANAHTARI)) as OturumKaydi | undefined;
     if (kayit && typeof kayit === 'object' && 'dosya' in kayit) {
-      const okuma = projeVerisiOku(kayit.dosya);
+      const okuma = projeVerisiOku(kayit.dosya, m);
       return {
         acilan: { ...okuma, dosyaYolu: kayit.dosyaYolu ?? null, dosyaAdi: kayit.dosyaAdi ?? null, kaydedilmemis: kayit.kaydedilmemis !== false },
         hata: null,
       };
     }
   } catch (e) {
-    hata = `Son çalışma oturumu okunamadı (${hataMetni(e)}). Proje dosyanızı Aç ile yeniden açabilir ya da Ayarlar'daki otomatik kayıtlardan kurtarabilirsiniz.`;
+    hata = m.dosyaIslem.oturumOkunamadi(hataMetni(e));
   }
   if (hata) return { acilan: null, hata };
 
   try {
     const eski = (await get(ESKI_OTURUM_ANAHTARI)) ?? JSON.parse(localStorage.getItem(ESKI_OTURUM_ANAHTARI) ?? 'null');
     if (eski) {
-      const okuma = projeVerisiOku(eski);
+      const okuma = projeVerisiOku(eski, m);
       return { acilan: { ...okuma, dosyaYolu: null, dosyaAdi: null, kaydedilmemis: true }, hata: null };
     }
   } catch (e) {
-    return { acilan: null, hata: `Eski sürümden kalan proje aktarılamadı: ${hataMetni(e)}` };
+    return { acilan: null, hata: m.dosyaIslem.eskiAktarilamadi(hataMetni(e)) };
   }
   return { acilan: null, hata: null };
 }

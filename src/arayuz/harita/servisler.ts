@@ -51,10 +51,11 @@ export interface AramaSonucu {
 }
 
 /** OpenStreetMap Nominatim (anahtar yokken; yalnızca Enter ile). */
-export async function nominatimAra(sorgu: string): Promise<AramaSonucu[]> {
+export async function nominatimAra(sorgu: string, dil = 'tr'): Promise<AramaSonucu[]> {
+  // Masaüstünde dil, Rust'a arayüz diliyle bildirilir (dil_ayarla).
   if (tauriMi()) return invoke<AramaSonucu[]>('nominatim_ara', { sorgu });
   // Tarayıcıda geliştirme: doğrudan istek (tarayıcı kendi kimliğini ve adresini gönderir).
-  const p = new URLSearchParams({ format: 'jsonv2', q: sorgu, limit: '8', 'accept-language': 'tr', countrycodes: 'tr' });
+  const p = new URLSearchParams({ format: 'jsonv2', q: sorgu, limit: '8', 'accept-language': dil, countrycodes: 'tr' });
   const y = await fetch(`https://nominatim.openstreetmap.org/search?${p}`);
   if (!y.ok) return [];
   const v = (await y.json()) as { display_name: string; lat: string; lon: string }[];

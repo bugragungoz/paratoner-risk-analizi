@@ -5,7 +5,8 @@
 // Kot ve yükseklik KML'in yükseklik (z) değerinden ALINMAZ: Google Earth'te bu değer deniz
 // seviyesine ya da araziye göre olabilir, telefon GPS'inde hatası 10 m'yi bulabilir.
 
-import { kotMetni } from './bicim';
+import type { Metinler } from '../dil';
+import { tr as TR } from '../dil/tr';
 import { yeniKotSeviyesi, yeniParatoner, yeniYapi } from './model';
 import type { KotSeviyesi, LatLng, Paratoner, Proje, Yapi } from './tipler';
 
@@ -36,7 +37,7 @@ export interface XmlAyristirici {
 
 export class KmlHatasi extends Error {
   constructor(public kod: 'XML' | 'BOS') {
-    super(kod === 'XML' ? 'Dosya geçerli bir KML (XML) belgesi değil.' : 'Dosyada aktarılabilecek nokta ya da poligon yok.');
+    super(kod === 'XML' ? TR.kml.xmlHatasi : TR.kml.ogeYok);
   }
 }
 
@@ -237,7 +238,7 @@ export function uygunTurler(g: KmlGeometrisi): AktarimTuru[] {
   return ['alma'];
 }
 
-export function aktarimOnerisi(belge: KmlBelgesi, proje: Proje): AktarimOnerisi {
+export function aktarimOnerisi(belge: KmlBelgesi, proje: Proje, m: Metinler = TR): AktarimOnerisi {
   const ogeler = belge.ogeler.filter((o) => o.geometri.tur !== 'cizgi' && o.veri.pt_tur !== 'rp_daire');
   const tabanlar: TabanSecenegi[] = [...proje.kot_seviyeleri]
     .sort((a, b) => a.taban_kottan_yukseklik_m - b.taban_kottan_yukseklik_m)
@@ -253,7 +254,7 @@ export function aktarimOnerisi(belge: KmlBelgesi, proje: Proje): AktarimOnerisi 
       tabanlar.find((t) => t.tur !== 'cati' && t.isim === isim && Math.abs((t.yukseklik ?? NaN) - yukseklik) < KOT_TOLERANSI) ??
       tabanlar.find((t) => t.tur !== 'cati' && Math.abs((t.yukseklik ?? NaN) - yukseklik) < KOT_TOLERANSI);
     if (uyan) return uyan.anahtar;
-    const ad = isim || `Kot ${kotMetni(yukseklik)}`;
+    const ad = isim || m.kml.kotAdi(m.bicim.kot(yukseklik));
     const yeni: TabanSecenegi = { anahtar: kotAnahtari(ad, yukseklik), tur: 'yeniKot', isim: ad, yukseklik };
     tabanlar.push(yeni);
     return yeni.anahtar;
@@ -261,7 +262,7 @@ export function aktarimOnerisi(belge: KmlBelgesi, proje: Proje): AktarimOnerisi 
 
   // Önce dosyadaki kotlar (yapılar ve zemindeki paratonerler), sonra varsayılan.
   const ogeKotu = ogeler.map((o) => kotBul(o.veri.pt_kot, sayiOku(o.veri.pt_kot_m)));
-  if (!tabanlar.some((t) => t.tur !== 'cati')) tabanlar.push({ anahtar: kotAnahtari('Zemin', 0), tur: 'yeniKot', isim: 'Zemin', yukseklik: 0 });
+  if (!tabanlar.some((t) => t.tur !== 'cati')) tabanlar.push({ anahtar: kotAnahtari(m.kml.varsayilanKot, 0), tur: 'yeniKot', isim: m.kml.varsayilanKot, yukseklik: 0 });
   const varsayilanKot = tabanlar.find((t) => t.tur !== 'cati')!.anahtar;
 
   // Çatı seçenekleri: dosyadaki yapılar ve projedeki yapılar.
@@ -292,7 +293,7 @@ export function aktarimOnerisi(belge: KmlBelgesi, proje: Proje): AktarimOnerisi 
       oge,
       al: !var_ && !(tur === 'parsel' && parselSayisi > 1),
       tur,
-      ad: oge.ad || (tur === 'paratoner' ? `P${i + 1}` : `Yapı ${i + 1}`),
+      ad: oge.ad || (tur === 'paratoner' ? `P${i + 1}` : m.kml.varsayilanYapi(i + 1)),
       yukseklik: sayiOku(tur === 'paratoner' ? v.pt_mast_m : v.pt_H_m),
       taban: cati?.anahtar ?? ogeKotu[i] ?? varsayilanKot,
       notlar,

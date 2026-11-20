@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { sayi } from '../../core';
 import { SayiGirdisi } from './SayiGirdisi';
+import { useMetinler } from './useMetinler';
 
 interface Props {
   degerler: number[];
@@ -12,6 +12,9 @@ interface Props {
 /** Sayı listesi düzenleyici (ör. h eşikleri). Ondalık virgül desteklenir, değerler sıralı ve tekildir. */
 export function DegerListesi({ degerler, degisti, birim = 'm' }: Props) {
   const [yeni, setYeni] = useState<number | null>(null);
+  const m = useMetinler();
+  const t = m.degerListesi;
+  const { sayi } = m.bicim;
   const ekle = () => {
     if (yeni === null || yeni <= 0) return;
     degisti([...new Set([...degerler, yeni])].sort((a, b) => a - b));
@@ -23,12 +26,12 @@ export function DegerListesi({ degerler, degisti, birim = 'm' }: Props) {
         {degerler.map((d) => (
           <span key={d} className="cip">
             {sayi(d, d % 1 === 0 ? 0 : 1)} {birim}
-            <button type="button" className="cip-sil" onClick={() => degisti(degerler.filter((x) => x !== d))} title="Kaldır">
+            <button type="button" className="cip-sil" onClick={() => degisti(degerler.filter((x) => x !== d))} title={t.kaldir}>
               <X size={11} />
             </button>
           </span>
         ))}
-        {degerler.length === 0 && <span className="ipucu">Değer yok</span>}
+        {degerler.length === 0 && <span className="ipucu">{t.bos}</span>}
       </div>
       <div className="deger-ekle">
         <SayiGirdisi
@@ -36,7 +39,7 @@ export function DegerListesi({ degerler, degisti, birim = 'm' }: Props) {
           degisti={setYeni}
           asgari={0}
           asgariHaric
-          placeholder="Değer ekle"
+          placeholder={t.ekle}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -45,7 +48,7 @@ export function DegerListesi({ degerler, degisti, birim = 'm' }: Props) {
           }}
         />
         <button type="button" onClick={ekle} disabled={yeni === null || yeni <= 0}>
-          Ekle
+          {m.genel.ekle}
         </button>
       </div>
     </div>

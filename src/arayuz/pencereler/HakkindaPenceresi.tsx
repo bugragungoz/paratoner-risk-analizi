@@ -2,20 +2,23 @@
 
 import { Wordmark } from '../ortak/Logo';
 import { Pencere } from '../ortak/Pencere';
-import { DEPO_ADRESI as DEPO, KULLANIM_KOSULLARI, LISANS_ACIKLAMASI, LISANS_IZINLERI, SORUMLULUK_OZETI, TELIF } from '../ortak/yasal';
+import { DEPO_ADRESI as DEPO, TELIF } from '../ortak/yasal';
 import { disBaglantiAc } from '../platform/tauri';
+import { useMetinler } from '../ortak/useMetinler';
 
-const BILESENLER: [string, string][] = [
+const bilesenler = (t: { simgeler: string; rust: string; yazitipleri: string }): [string, string][] => [
   ['Tauri', 'MIT / Apache-2.0'],
   ['React, Radix UI', 'MIT'],
   ['Leaflet', 'BSD-2-Clause'],
   ['Turf', 'MIT'],
+  ['proj4js', 'MIT'],
   ['docx', 'MIT'],
   ['pdfmake', 'MIT'],
   ['html2canvas', 'MIT'],
-  ['Lucide (simgeler)', 'ISC'],
-  ['Rust bileşenleri (reqwest, keyring, serde ve diğerleri)', 'MIT / Apache-2.0'],
-  ['Geist, JetBrains Mono, Carlito (yazı tipleri)', 'SIL OFL 1.1'],
+  ['JSZip', 'MIT'],
+  [t.simgeler, 'ISC'],
+  [t.rust, 'MIT / Apache-2.0'],
+  [t.yazitipleri, 'SIL OFL 1.1'],
 ];
 
 function Baglanti({ url, children }: { url: string; children: string }) {
@@ -27,45 +30,47 @@ function Baglanti({ url, children }: { url: string; children: string }) {
 }
 
 export function HakkindaPenceresi({ kapat }: { kapat: () => void }) {
+  const m = useMetinler();
+  const t = m.hakkinda;
   return (
-    <Pencere acik kapat={kapat} baslik="Hakkında">
+    <Pencere acik kapat={kapat} baslik={t.baslik}>
       <div className="form-dikey hakkinda">
         <Wordmark boyut="buyuk" />
-        <p className="hakkinda-surum">Sürüm {__UYGULAMA_SURUMU__}</p>
-        <p className="kart-metni">
-          NF C 17-102 esaslı aktif (ESE) paratoner risk analizi ve koruma kontrolü: yapı bazlı risk değerlendirmesi, gerekli koruma seviyesi, koruma yarıçapıyla kapsama kontrolü ve Word/PDF rapor.
-        </p>
-        <div className="uyari-blok">{SORUMLULUK_OZETI} Girdilerin (Nk, ΔT, C katsayıları, kotlar, konumlar) doğruluğunu kontrol edin.</div>
+        <p className="hakkinda-surum">{t.surum(__UYGULAMA_SURUMU__)}</p>
+        <p className="kart-metni">{t.tanim}</p>
+        <div className="uyari-blok">
+          {m.yasal.sorumlulukOzeti} {t.girdiler}
+        </div>
         <div>
-          <div className="alan-etiketi">Telif ve lisans</div>
+          <div className="alan-etiketi">{t.telif}</div>
           <p className="kart-metni">
-            {TELIF}. {LISANS_ACIKLAMASI}
+            {TELIF}. {m.yasal.lisansAciklamasi}
           </p>
           <ul className="yasal-liste">
-            {LISANS_IZINLERI.map((m) => (
-              <li key={m}>{m}</li>
+            {m.yasal.lisansIzinleri.map((izin) => (
+              <li key={izin}>{izin}</li>
             ))}
           </ul>
           <p className="kart-metni">
-            <Baglanti url={DEPO}>Kaynak kod ve sorun bildirimi</Baglanti> · <Baglanti url="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0 metni</Baglanti>
+            <Baglanti url={DEPO}>{t.kaynak}</Baglanti> · <Baglanti url="https://www.gnu.org/licenses/gpl-3.0.html">{t.gpl}</Baglanti>
           </p>
         </div>
         <details className="yasal-ayrinti">
-          <summary>Kullanım koşulları ve sorumluluk reddi</summary>
+          <summary>{t.kosullar}</summary>
           <dl className="kosul-listesi">
-            {KULLANIM_KOSULLARI.map((m) => (
-              <div key={m.baslik}>
-                <dt>{m.baslik}</dt>
-                <dd>{m.metin}</dd>
+            {m.yasal.kosullar.map((k) => (
+              <div key={k.baslik}>
+                <dt>{k.baslik}</dt>
+                <dd>{k.metin}</dd>
               </div>
             ))}
           </dl>
         </details>
         <div>
-          <div className="alan-etiketi">Kullanılan açık kaynak bileşenler</div>
+          <div className="alan-etiketi">{t.bilesenler}</div>
           <table className="hakkinda-tablo">
             <tbody>
-              {BILESENLER.map(([ad, lisans]) => (
+              {bilesenler(t).map(([ad, lisans]) => (
                 <tr key={ad}>
                   <td>{ad}</td>
                   <td>{lisans}</td>
@@ -73,12 +78,9 @@ export function HakkindaPenceresi({ kapat }: { kapat: () => void }) {
               ))}
             </tbody>
           </table>
-          <p className="ipucu-kucuk">
-            Harita verileri ve görüntüleri sağlayıcılarına aittir (Google, Esri ve veri sağlayıcıları, © OpenStreetMap katkıda bulunanlar); haritada ve raporda atıfları gösterilir. Google Maps logosu
-            Google'ın markasıdır. Bileşenlerin tam listesi ve lisansları kaynak depodaki NOTICE.md dosyasındadır.
-          </p>
+          <p className="ipucu-kucuk">{t.haritaNotu}</p>
         </div>
-        <p className="ipucu-kucuk">Opus 5.5 ile kodlandı, Fable 5.2 ile geliştirildi.</p>
+        <p className="ipucu-kucuk">{t.gelistirme}</p>
       </div>
     </Pencere>
   );

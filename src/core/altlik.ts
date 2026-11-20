@@ -8,6 +8,7 @@
 // Çizim → yerel düzlem: X = ölçek·(cos a·x − sin a·y) + tx,  Y = ölçek·(sin a·x + cos a·y) + ty.
 
 import { TUREF_DILIMLERI, turefDuzlemi, yerelDuzlem, type TurefDilimi, type XY } from './koordinat';
+import { tr as TR } from '../dil/tr';
 import type { LatLng } from './tipler';
 
 export type AltlikHizalamasi =
@@ -102,6 +103,13 @@ export interface IkiNoktaSonucu {
   olcekOrani: number;
 }
 
+/** İki noktanın çizimde ya da haritada çakışması (mesaj arayüzde dile göre verilir). */
+export class HizalamaHatasi extends Error {
+  constructor() {
+    super(TR.altlik.ayniNokta);
+  }
+}
+
 /**
  * İki nokta hizalaması: çizimdeki c1, c2 noktaları haritadaki h1, h2 noktalarına getirilir.
  * Ölçek kilitliyse (varsayılan) ölçek çizim biriminden gelir ve iki noktanın ortası eşlenir;
@@ -114,7 +122,7 @@ export function ikiNoktaHizala(c1: XY, c2: XY, h1: LatLng, h2: LatLng, birim: nu
   const vy = (c2.y - c1.y) * birim;
   const v = Math.hypot(vx, vy);
   const w = Math.hypot(p2.x, p2.y);
-  if (v < 1e-6 || w < 1e-3) throw new Error('İki nokta birbirinden ayrı olmalı.');
+  if (v < 1e-6 || w < 1e-3) throw new HizalamaHatasi();
   const aci = Math.atan2(p2.y, p2.x) - Math.atan2(vy, vx);
   const olcekOrani = w / v;
   const olcek = olcekSerbest ? birim * olcekOrani : birim;

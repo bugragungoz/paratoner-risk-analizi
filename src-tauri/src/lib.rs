@@ -1,3 +1,4 @@
+mod dil;
 mod harita_servisleri;
 mod proje_dosyasi;
 
@@ -60,6 +61,7 @@ pub fn run() {
             harita_servisleri::yer_oneri,
             harita_servisleri::yer_ayrinti,
             harita_servisleri::nominatim_ara,
+            dil::dil_ayarla,
             proje_dosyasi::proje_dosyasi_oku,
             proje_dosyasi::proje_dosyasi_yaz,
             proje_dosyasi::otomatik_kayit_yaz,

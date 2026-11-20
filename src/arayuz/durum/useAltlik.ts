@@ -14,6 +14,7 @@ import {
   type LatLng,
 } from '../../core';
 import { useEtkilesim } from '../ortak/Etkilesim';
+import type { Metinler } from '../../dil';
 import { useMetinler } from '../ortak/useMetinler';
 import { dxfDosyasiOku, dxfDosyasiSec, tauriMi } from '../platform/tauri';
 import { altlikAyarla, altlikGuncelle } from './eylemler';
@@ -25,7 +26,17 @@ export interface AltlikVerisi {
   cozum: DxfAltligi;
 }
 
-const hataMetni = (e: unknown) => (e instanceof DxfOkumaHatasi || e instanceof Error ? e.message : String(e));
+/** DXF okuma hatası koduyla, diğerleri mesajıyla (dile göre). */
+const hataMetni = (e: unknown, m: Metinler) =>
+  e instanceof DxfOkumaHatasi
+    ? e.kod === 'IKILI'
+      ? m.altlik.hataIkili
+      : e.kod === 'BOS'
+        ? m.altlik.hataBos
+        : m.altlik.hataBicim
+    : e instanceof Error
+      ? e.message
+      : String(e);
 
 /**
  * `konum`: harita merkezi (koordinatsız çizim buraya konur) ve proje ortası (TUREF diliminin seçiminde
@@ -54,7 +65,7 @@ export function useAltlik(konum: () => { harita: LatLng | null; proje: LatLng | 
         if (!iptal) setVeri({ yol, cozum });
       })
       .catch((e) => {
-        if (!iptal) setOkumaHatasi({ yol, mesaj: `${m.altlik.bulunamadi(yol)} (${hataMetni(e)})` });
+        if (!iptal) setOkumaHatasi({ yol, mesaj: `${m.altlik.bulunamadi(yol)} (${hataMetni(e, m)})` });
       });
     return () => {
       iptal = true;
@@ -67,11 +78,11 @@ export function useAltlik(konum: () => { harita: LatLng | null; proje: LatLng | 
       let secilen: Awaited<ReturnType<typeof dxfDosyasiSec>>;
       let cozum: DxfAltligi;
       try {
-        secilen = await dxfDosyasiSec(m.altlik.filtre);
+        secilen = await dxfDosyasiSec(m.altlik.filtre, m);
         if (!secilen) return;
         cozum = dxfCoz(secilen.bayt);
       } catch (e) {
-        bildir(m.altlik.okunamadi(hataMetni(e)), 'hata');
+        bildir(m.altlik.okunamadi(hataMetni(e, m)), 'hata');
         return;
       }
       let yeni: AltlikAyari;

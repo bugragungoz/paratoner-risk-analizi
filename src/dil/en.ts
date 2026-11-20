@@ -1,8 +1,20 @@
 // English texts. Structure and message signatures must match tr.ts (checked by the type system).
 
+import { bicimEn } from './en/bicim';
+import { hesapEn } from './en/hesap';
+import { sabitEn } from './en/sabit';
+import { raporEn } from './en/rapor';
+import { dosyaEn } from './en/dosya';
+import { arayuzEn } from './en/arayuz';
 import type { Metinler } from './index';
 
 export const en: Metinler = {
+  bicim: bicimEn,
+  hesap: hesapEn,
+  sabit: sabitEn,
+  rapor: raporEn,
+  dosya: dosyaEn,
+  ...arayuzEn,
   dil: {
     ad: 'Language',
     tr: 'Türkçe',
@@ -41,6 +53,9 @@ export const en: Metinler = {
     okunamadi: (hata) => `KML file could not be read: ${hata}`,
     xmlHatasi: 'The file is not a valid KML (XML) document.',
     kmzBos: 'The KMZ archive contains no KML file.',
+    varsayilanKot: 'Ground',
+    kotAdi: (kot) => `Level ${kot}`,
+    varsayilanYapi: (no) => `Structure ${no}`,
     ogeYok: 'The file contains no points or polygons to import.',
     onizlemeBaslik: (dosya) => `Import: ${dosya}`,
     ozet: (nokta, poligon) => `Found ${nokta} ${nokta === 1 ? 'point' : 'points'} and ${poligon} ${poligon === 1 ? 'polygon' : 'polygons'}.`,
@@ -112,6 +127,10 @@ export const en: Metinler = {
     filtre: 'AutoCAD DXF',
     okunuyor: 'Reading underlay…',
     okunamadi: (hata) => `DXF could not be read: ${hata}`,
+    hataIkili: 'Binary DXF is not supported; save the drawing as ASCII DXF.',
+    hataBicim: 'The file is not a valid DXF.',
+    hataBos: 'The drawing has no lines to display.',
+    ayniNokta: 'The two points must be apart.',
     bulunamadi: (yol) => `Underlay file could not be opened: ${yol}`,
     yenidenSec: 'Select the file again…',
     tarayiciNotu: 'In the browser the underlay cannot be re-read when the project opens; select the file again.',

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { pencere } from '../platform/tauri';
+import { useMetinler } from '../ortak/useMetinler';
 
 interface Props {
   geriAl: () => void;
@@ -15,6 +16,7 @@ interface Props {
 /** Uygulama genelinde sağ tık menüsü (metin kutularında tarayıcının kendi menüsü kalır). */
 export function SagTikMenu(p: Props) {
   const [konum, setKonum] = useState<{ x: number; y: number } | null>(null);
+  const t = useMetinler().sagTik;
 
   useEffect(() => {
     function sagTik(e: MouseEvent) {
@@ -42,34 +44,34 @@ export function SagTikMenu(p: Props) {
   return (
     <div className="sag-tik-menu" style={{ left: konum.x, top: konum.y }} onContextMenu={(e) => e.preventDefault()} role="menu">
       <button role="menuitem" disabled={!p.geriAlinabilir} onClick={yap(p.geriAl)}>
-        Geri al <kbd>Ctrl+Z</kbd>
+        {t.geriAl} <kbd>Ctrl+Z</kbd>
       </button>
       <button role="menuitem" disabled={!p.yinelenebilir} onClick={yap(p.yinele)}>
-        Yinele <kbd>Ctrl+Y</kbd>
+        {t.yinele} <kbd>Ctrl+Y</kbd>
       </button>
       <hr />
       <button role="menuitem" onClick={yap(p.projeyeOdakla)}>
-        Projeye odakla
+        {t.projeyeOdakla}
       </button>
       <button role="menuitem" onClick={yap(p.turkiye)}>
-        Türkiye görünümü
+        {t.turkiye}
       </button>
       <button role="menuitem" onClick={yap(p.kaydet)}>
-        Kaydet <kbd>Ctrl+S</kbd>
+        {t.kaydet} <kbd>Ctrl+S</kbd>
       </button>
       <button role="menuitem" onClick={yap(p.farkliKaydet)}>
-        Farklı kaydet… <kbd>Ctrl+Shift+S</kbd>
+        {t.farkliKaydet} <kbd>Ctrl+Shift+S</kbd>
       </button>
       <hr />
       <button role="menuitem" onClick={yap(() => window.location.reload())}>
-        Uygulamayı yenile
+        {t.yenile}
       </button>
       <button role="menuitem" onClick={yap(() => pencere.tamEkranGecis())}>
-        Tam ekran <kbd>F11</kbd>
+        {t.tamEkran} <kbd>F11</kbd>
       </button>
       <hr />
       <button role="menuitem" className="tehlike" onClick={yap(() => pencere.kapat())}>
-        Çıkış
+        {t.cikis}
       </button>
     </div>
   );

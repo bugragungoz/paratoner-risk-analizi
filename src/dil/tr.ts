@@ -1,6 +1,19 @@
 // Türkçe metinler: sözlüğün yapısını bu dosya belirler (bkz. index.ts).
 
+import { bicimTr } from './tr/bicim';
+import { hesapTr } from './tr/hesap';
+import { sabitTr } from './tr/sabit';
+import { raporTr } from './tr/rapor';
+import { dosyaTr } from './tr/dosya';
+import { arayuzTr } from './tr/arayuz';
+
 export const tr = {
+  bicim: bicimTr,
+  hesap: hesapTr,
+  sabit: sabitTr,
+  rapor: raporTr,
+  dosya: dosyaTr,
+  ...arayuzTr,
   dil: {
     ad: 'Dil',
     tr: 'Türkçe',
@@ -42,6 +55,9 @@ export const tr = {
     xmlHatasi: 'Dosya geçerli bir KML (XML) belgesi değil.',
     kmzBos: 'KMZ arşivinde KML dosyası yok.',
     ogeYok: 'Dosyada aktarılabilecek nokta ya da poligon yok.',
+    varsayilanKot: 'Zemin',
+    kotAdi: (kot: string) => `Kot ${kot}`,
+    varsayilanYapi: (no: number) => `Yapı ${no}`,
     // İçe aktarma penceresi
     onizlemeBaslik: (dosya: string) => `İçe aktar: ${dosya}`,
     ozet: (nokta: number, poligon: number) => `${nokta} nokta, ${poligon} poligon bulundu.`,
@@ -111,6 +127,10 @@ export const tr = {
     filtre: 'AutoCAD DXF',
     okunuyor: 'Altlık okunuyor…',
     okunamadi: (hata: string) => `DXF okunamadı: ${hata}`,
+    hataIkili: 'İkili (binary) DXF desteklenmiyor; çizimi ASCII DXF olarak kaydedin.',
+    hataBicim: 'Dosya geçerli bir DXF değil.',
+    hataBos: 'Çizimde gösterilebilecek çizgi yok.',
+    ayniNokta: 'İki nokta birbirinden ayrı olmalı.',
     bulunamadi: (yol: string) => `Altlık dosyası açılamadı: ${yol}`,
     yenidenSec: 'Dosyayı yeniden seç…',
     tarayiciNotu: 'Tarayıcıda altlık dosyası proje açılınca yeniden okunamaz; dosyayı yeniden seçin.',

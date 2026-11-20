@@ -5,10 +5,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import L from 'leaflet';
 import { bearing, booleanIntersects, centerOfMass, circle, destination, distance, point } from '@turf/turf';
-import { elipsoitMesafe, etkinDeltaT, poligonaDonustur, rpOku, sayi, type LatLng, type Proje, type ProjeSonucu, type Seviye } from '../../core';
+import { elipsoitMesafe, etkinDeltaT, poligonaDonustur, rpOku, type LatLng, type Proje, type ProjeSonucu, type Seviye } from '../../core';
+import type { Metinler } from '../../dil';
 import { useProje } from '../durum/ProjeSaglayici';
 import { useEtkilesim } from '../ortak/Etkilesim';
-import { etkinKatman, karoAdresi, katmanTanimi } from './katmanlar';
+import { etkinKatman, karoAdresi, katmanAtfi, katmanTanimi } from './katmanlar';
+import { useMetinler } from '../ortak/useMetinler';
 import { googleTelif } from './servisler';
 import googleLogoUrl from '../gorseller/google-maps-logo.svg?url';
 import { metinOgesi, satirliOge } from './metin';
@@ -156,16 +158,17 @@ function kirpmaAlani(harita: L.Map, sinir: L.LatLngBounds, W: number, H: number)
 }
 
 /** Rapor şeklinin lejantı: haritada o an görünen öğeler. */
-function sekilLejanti(p: Proje, s: ProjeSonucu, kapsamaGoster: boolean, g: HaritaGorunumu): LejantOgesi[] {
+function sekilLejanti(p: Proje, s: ProjeSonucu, kapsamaGoster: boolean, g: HaritaGorunumu, mt: Metinler): LejantOgesi[] {
+  const t = mt.harita;
   const css = getComputedStyle(document.documentElement);
-  const l: LejantOgesi[] = [{ tur: 'nokta', renk: css.getPropertyValue('--info').trim() || '#3b82f6', metin: 'Paratoner' }];
-  if (p.paratonerler.some((x) => x.aktif_mi === false)) l.push({ tur: 'nokta', renk: '#9ca3af', metin: 'Devre dışı paratoner (hesaba katılmaz)' });
+  const l: LejantOgesi[] = [{ tur: 'nokta', renk: css.getPropertyValue('--info').trim() || '#3b82f6', metin: t.lejantParatoner }];
+  if (p.paratonerler.some((x) => x.aktif_mi === false)) l.push({ tur: 'nokta', renk: '#9ca3af', metin: t.lejantDevreDisi });
   if (kapsamaGoster) {
-    if (s.yapilar.some((y) => y.kapsama?.kapsananGeoJSON)) l.push({ tur: 'alan', renk: RENK.kapsanan, metin: 'Korunan yapı alanı' });
-    if (s.yapilar.some((y) => y.kapsama?.acikGeoJSON)) l.push({ tur: 'alan', renk: RENK.acik, metin: 'Açıkta kalan yapı alanı' });
+    if (s.yapilar.some((y) => y.kapsama?.kapsananGeoJSON)) l.push({ tur: 'alan', renk: RENK.kapsanan, metin: t.lejantKorunan });
+    if (s.yapilar.some((y) => y.kapsama?.acikGeoJSON)) l.push({ tur: 'alan', renk: RENK.acik, metin: t.lejantAcik });
   }
-  if (p.parsel_siniri && p.parsel_siniri.length >= 3) l.push({ tur: 'cizgi', renk: '#9ca3af', metin: 'Parsel sınırı', kesikli: true });
-  if (g.izolasyon) l.push({ tur: 'cizgi', renk: RENK.odak, metin: 'Odak yapı için gerçek Rp', kesikli: true });
+  if (p.parsel_siniri && p.parsel_siniri.length >= 3) l.push({ tur: 'cizgi', renk: '#9ca3af', metin: t.lejantParsel, kesikli: true });
+  if (g.izolasyon) l.push({ tur: 'cizgi', renk: RENK.odak, metin: t.lejantOdak, kesikli: true });
   else if (g.seviyeler.size > 0) {
     // Haritadaki renk sırasıyla aynı: seçili h değerleri küçükten büyüğe.
     const seviyeler = [...g.seviyeler].join(', ');
@@ -174,7 +177,7 @@ function sekilLejanti(p: Proje, s: ProjeSonucu, kapsamaGoster: boolean, g: Harit
       .sort((a, b) => a - b)
       .forEach((h, i) => {
         if (!etkinler.some((x) => x.h_esikleri.includes(h))) return;
-        l.push({ tur: 'cizgi', renk: ESIK_RENKLERI[i % ESIK_RENKLERI.length] as string, metin: `h = ${sayi(h, h % 1 ? 1 : 0)} m referans çemberi (Seviye ${seviyeler})` });
+        l.push({ tur: 'cizgi', renk: ESIK_RENKLERI[i % ESIK_RENKLERI.length] as string, metin: t.lejantCember(mt.bicim.sayi(h, h % 1 ? 1 : 0), seviyeler) });
       });
   }
   return l;
@@ -183,6 +186,7 @@ function sekilLejanti(p: Proje, s: ProjeSonucu, kapsamaGoster: boolean, g: Harit
 export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
   const { proje, sonuc, ayarlar, haritaAnahtarlari } = useProje();
   const { onayla, bildir } = useEtkilesim();
+  const mt = useMetinler();
   /** Atıf (düz metin): `harita` haritanın köşesinde, `sekil` rapor şeklinde, `kaynak` raporun Kaynaklar bölümünde. */
   const atifMetni = useRef({ sekil: '', kaynak: '', googleLogosu: false });
 
@@ -193,9 +197,9 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
   const altlikKatmani = useRef<AltlikKatmani | null>(null);
 
   // Olay işleyicilerinin her zaman güncel değerleri görmesi için (her çizimden sonra güncellenir).
-  const guncel = useRef({ props, proje, onayla, sonuc, ayarlar });
+  const guncel = useRef({ props, proje, onayla, sonuc, ayarlar, mt });
   useLayoutEffect(() => {
-    guncel.current = { props, proje, onayla, sonuc, ayarlar };
+    guncel.current = { props, proje, onayla, sonuc, ayarlar, mt };
   });
   const cizilen = useRef<LatLng[]>([]);
   const olcumNoktalari = useRef<LatLng[]>([]);
@@ -251,7 +255,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
     let hataSayisi = 0;
     katman.on('tileerror', () => {
       hataSayisi += 1;
-      if (hataSayisi === 8 && t.saglayici) bildir(`${t.isim} karoları alınamıyor. Anahtarı Ayarlar > Harita servisleri'nden deneyin.`, 'hata');
+      if (hataSayisi === 8 && t.saglayici) bildir(mt.harita.karoHatasi(mt.katman[ad]), 'hata');
     });
     karoRef.current = katman.addTo(harita);
 
@@ -259,13 +263,14 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
     const kontrol = harita.attributionControl;
     let eklenen = '';
     const google = t.saglayici === 'google';
+    const sabitAtif = katmanAtfi(ad, mt);
     // Google: logo sol altta (Google'ın atıf kuralı: logo, mümkünse yazı yerine); telif metni sağ altta.
     const logo = google ? new GoogleLogosu({ position: 'bottomleft' }).addTo(harita) : null;
     const atifYaz = (telif: string) => {
       if (eklenen) kontrol.removeAttribution(eklenen);
-      const haritada = google ? telif : t.atif;
+      const haritada = google ? telif : sabitAtif;
       eklenen = htmlKacir(haritada);
-      atifMetni.current = { sekil: haritada, kaynak: google ? (telif ? `Google Maps · ${telif}` : 'Google Maps') : t.atif, googleLogosu: google };
+      atifMetni.current = { sekil: haritada, kaynak: google ? (telif ? `Google Maps · ${telif}` : 'Google Maps') : sabitAtif, googleLogosu: google };
       if (eklenen) kontrol.addAttribution(eklenen);
     };
     atifYaz('');
@@ -302,7 +307,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
       logo?.remove();
       atifMetni.current = { sekil: '', kaynak: '', googleLogosu: false };
     };
-  }, [ayarlar.katman, haritaAnahtarlari, bildir]);
+  }, [ayarlar.katman, haritaAnahtarlari, bildir, mt]);
 
   // ---------------------------------------------------------------- Dış API
   useImperativeHandle(ref, () => ({
@@ -338,7 +343,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
           logging: false,
           ignoreElements: (el) => el.classList?.contains('leaflet-control-container') || el.classList?.contains('altlik-tuval'),
         });
-        const { proje: p, sonuc: s, ayarlar: a, props: pr } = guncel.current;
+        const { proje: p, sonuc: s, ayarlar: a, props: pr, mt: dil } = guncel.current;
         const cy = kap.clientHeight / 2;
         const cx = kap.clientWidth / 2;
         const metrePerPx = harita.distance(harita.containerPointToLatLng([cx - 50, cy]), harita.containerPointToLatLng([cx + 50, cy])) / 100;
@@ -353,7 +358,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
         sekil.width = Math.round(k.w * o);
         sekil.height = Math.round(k.h * o);
         sekil.getContext('2d')?.drawImage(tuval, k.x * o, k.y * o, sekil.width, sekil.height, 0, 0, sekil.width, sekil.height);
-        haritaSekliniSusle(sekil, { olcek: o, metrePerPx, lejant: sekilLejanti(p, s, a.kapsamaGoster, pr.gorunum), atif: atif.sekil, logo: logoGorseli });
+        haritaSekliniSusle(sekil, { olcek: o, metrePerPx, lejant: sekilLejanti(p, s, a.kapsamaGoster, pr.gorunum, dil), atif: atif.sekil, logo: logoGorseli, kuzey: dil.harita.kuzeyHarfi });
         return { url: sekil.toDataURL('image/jpeg', 0.9), atif: atif.kaynak };
       } catch (e) {
         console.error('Harita görüntüsü alınamadı:', e);
@@ -440,7 +445,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
       k.cizim.clearLayers();
       cizilen.current.forEach((n, i) => {
         const m = L.circleMarker(ll(n), { radius: 5, color: renk, fillColor: renk, fillOpacity: 1, weight: 2 }).addTo(k.cizim);
-        if (i === 0) m.bindTooltip('Başlangıç noktası: bitirmek için tekrar tıklayın ya da Enter');
+        if (i === 0) m.bindTooltip(guncel.current.mt.harita.baslangic);
       });
       if (cizilen.current.length > 1) L.polyline(cizilen.current.map(ll), { color: renk, weight: 2, dashArray: '4 4' }).addTo(k.cizim);
     };
@@ -501,11 +506,12 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
       }
       if (e.key === 'Escape' && mod !== 'yok') {
         if (poligonModu && cizilen.current.length) {
+          const t = guncel.current.mt.harita;
           const vazgec = await guncel.current.onayla({
-            baslik: 'Çizim tamamlanmadı',
-            aciklama: 'Çizdiğiniz noktalar silinecek. Vazgeçmek istiyor musunuz?',
-            onayEtiketi: 'Vazgeç ve sil',
-            vazgecEtiketi: 'Çizime devam',
+            baslik: t.cizimTamamlanmadi,
+            aciklama: t.cizimSilinecek,
+            onayEtiketi: t.vazgecSil,
+            vazgecEtiketi: t.cizimeDevam,
             tehlikeli: true,
           });
           if (!vazgec) return;
@@ -615,7 +621,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
       const soluk = !!odakMerkez && distance(prNokta, odakMerkez, { units: 'meters' }) > 150;
 
       const isaret = L.marker([pr.lat, pr.lng], { icon: paratonerIkonu(pasif), draggable: true, opacity: soluk ? 0.3 : 1 }).addTo(k.paratoner);
-      isaret.bindTooltip(metinOgesi(pasif ? `${pr.isim} (devre dışı)` : pr.isim), {
+      isaret.bindTooltip(metinOgesi(pasif ? mt.harita.devreDisiAd(pr.isim) : pr.isim), {
         permanent: true,
         direction: 'top',
         offset: [0, -8],
@@ -646,9 +652,9 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
               L.circle([pr.lat, pr.lng], { radius: okuma.rp, color: renk, weight: sv === 'I' ? 2.5 : 2, opacity: 0.85, dashArray: SEVIYE_CIZGISI[sv], fillColor: renk, fillOpacity: 0.02 })
                 .bindTooltip(
                   satirliOge([
-                    { metin: `Paratoner: ${pr.isim}`, kalin: true },
-                    { metin: `h = ${h} m · ΔT = ${dT} µs` },
-                    { metin: `Seviye ${sv} · Rp = ${okuma.rp} m`, kalin: true },
+                    { metin: mt.harita.cemberParatoner(pr.isim), kalin: true },
+                    { metin: `h = ${mt.bicim.sayi(h, h % 1 ? 1 : 0)} m · ΔT = ${dT} µs` },
+                    { metin: mt.harita.cemberSeviye(sv, mt.bicim.sayi(okuma.rp, okuma.rp % 1 ? 1 : 0)), kalin: true },
                   ]),
                   { sticky: true, className: 'custom-tooltip' },
                 )
@@ -669,7 +675,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
         interactive: false,
         icon: L.divIcon({
           className: 'odak-etiket-kap',
-          html: metinOgesi(`${pr.isim} → Rp: ${sayi(satir.rp)} m (Seviye ${satir.sutun}, h: ${sayi(satir.gercekH)} m)`, 'odak-etiket'),
+          html: metinOgesi(mt.harita.odakEtiket(pr.isim, mt.bicim.sayi(satir.rp), String(satir.sutun), mt.bicim.sayi(satir.gercekH)), 'odak-etiket'),
           iconSize: undefined,
         }),
       }).addTo(k.paratoner);
@@ -677,7 +683,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
     // Bağımlılıklar projenin tamamı değil, çizimin okuduğu alanlardır: rapor numarası ya da adres
     // yazılırken paratoner katmanı baştan kurulmaz.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proje.yapilar, proje.paratonerler, proje.deltaT, proje.deltaT_modu, sonuc, izolasyon, odakYapiId, hEsikleri, seviyeler]);
+  }, [proje.yapilar, proje.paratonerler, proje.deltaT, proje.deltaT_modu, sonuc, izolasyon, odakYapiId, hEsikleri, seviyeler, mt]);
 
   // ---------------------------------------------------------------- Street View işareti
   useEffect(() => {
@@ -687,12 +693,12 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
     const konum = props.streetViewKonumu;
     if (!konum) return;
     const m = L.marker(ll(konum), { icon: STREETVIEW_IKON, draggable: true }).addTo(k.streetview);
-    m.bindTooltip(metinOgesi('Street View konumu'), { permanent: true, direction: 'top', offset: [0, -6], className: 'paratoner-etiket' });
+    m.bindTooltip(metinOgesi(mt.harita.streetView), { permanent: true, direction: 'top', offset: [0, -6], className: 'paratoner-etiket' });
     m.on('dragend', () => {
       const { lat, lng } = m.getLatLng();
       guncel.current.props.onStreetView({ lat, lng });
     });
-  }, [props.streetViewKonumu]);
+  }, [props.streetViewKonumu, mt]);
 
   // ---------------------------------------------------------------- Poligon köşe düzenleme
   useEffect(() => {

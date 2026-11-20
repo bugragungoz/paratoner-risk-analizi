@@ -3,6 +3,8 @@
 // yazıldığı için yeniden yükleme son durumu geri getirir.
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { metinler } from '../../dil';
+import { ayarlariYukle } from '../durum/ayarlar';
 import { ParatonerIsareti } from './Logo';
 
 interface Durum {
@@ -34,22 +36,26 @@ export class HataYakalayici extends Component<{ children: ReactNode }, Durum> {
 
   override render() {
     if (!this.state.hata) return this.props.children;
+    let t = metinler('tr').hataYakalayici;
+    try {
+      t = metinler(ayarlariYukle().dil).hataYakalayici;
+    } catch {
+      // Ayarlar okunamazsa Türkçe kalır.
+    }
     return (
       <div className="hata-ekrani" role="alert">
         <div className="hata-ekrani-kutu">
           <ParatonerIsareti boyut={28} className="wordmark-isaret" />
-          <h1>Beklenmeyen bir hata oluştu</h1>
-          <p>
-            Projeniz son değişikliğe kadar kaydedildi (masaüstünde ayrıca otomatik kayıt klasöründe). Programı yeniden yüklediğinizde kaldığınız yerden devam edersiniz.
-          </p>
-          <p className="ipucu-kucuk">Hata tekrar ederse ayrıntıyı kopyalayıp geliştiriciye iletin.</p>
+          <h1>{t.baslik}</h1>
+          <p>{t.kaydedildi}</p>
+          <p className="ipucu-kucuk">{t.tekrar}</p>
           <pre className="hata-ekrani-ayrinti">{this.state.hata.message}</pre>
           <div className="modal-butonlar">
             <button className="ikincil-buton" onClick={() => this.kopyala()}>
-              {this.state.kopyalandi ? 'Kopyalandı' : 'Ayrıntıyı kopyala'}
+              {this.state.kopyalandi ? t.kopyalandi : t.kopyala}
             </button>
             <button className="buton-birincil" onClick={() => location.reload()}>
-              Yeniden yükle
+              {t.yenidenYukle}
             </button>
           </div>
         </div>

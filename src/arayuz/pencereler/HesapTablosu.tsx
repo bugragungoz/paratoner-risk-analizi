@@ -1,19 +1,25 @@
 import { AlertTriangle } from 'lucide-react';
-import { eksikYapilar, hesapTablosuCsv, ngHesapla, raporOzeti, sayi, type Proje, type Yapi, type YapiSonucu } from '../../core';
+import { eksikYapilar, hesapTablosuCsv, ngHesapla, raporOzeti, type Proje, type Yapi, type YapiSonucu } from '../../core';
+import type { Metinler } from '../../dil';
 import { useProje } from '../durum/ProjeSaglayici';
 import { useEtkilesim } from '../ortak/Etkilesim';
 import { Pencere } from '../ortak/Pencere';
 import { dosyaKaydet, guvenliDosyaAdi } from '../platform/tauri';
+import { useMetinler } from '../ortak/useMetinler';
 
 /** Sayıyı anlamlı basamakla yazar: küçük olasılık değerleri (Nd, Nc) sıfıra yuvarlanıp kaybolmasın. */
-function hassas(deger: number | null | undefined, basamak = 4): string {
+function hassas(m: Metinler, deger: number | null | undefined, basamak = 4): string {
   if (deger === null || deger === undefined || !Number.isFinite(deger)) return '-';
   if (deger === 0) return '0';
-  return deger.toLocaleString('tr-TR', { maximumSignificantDigits: basamak, useGrouping: false });
+  return deger.toLocaleString(m.bicim.yerel, { maximumSignificantDigits: basamak, useGrouping: false });
 }
 
 /** Risk zincirinin adım adım dökümü: her satırda formül, yerine konan değerler ve sonuç. */
 function HesapDokumu({ y, yapi, proje }: { y: YapiSonucu; yapi: Yapi | undefined; proje: Proje }) {
+  const m = useMetinler();
+  const t = m.hesapTablosu;
+  const { sayi } = m.bicim;
+  const h = (d: number | null | undefined) => hassas(m, d);
   const r = y.risk;
   if (!r || !yapi) return null;
   const H = yapi.H_m ?? 0;
@@ -21,28 +27,28 @@ function HesapDokumu({ y, yapi, proje }: { y: YapiSonucu; yapi: Yapi | undefined
   const adimlar: { ad: string; formul: string; yerine: string; sonuc: string }[] = [
     manuel
       ? {
-          ad: 'Etkin eşdeğer alan',
+          ad: t.adimAe,
           formul: 'Ae = L·W + 6H(L + W) + 9πH²',
           yerine: `${sayi(yapi.L_m)}·${sayi(yapi.W_m)} + 6·${sayi(H)}·(${sayi(yapi.L_m)} + ${sayi(yapi.W_m)}) + 9π·${sayi(H)}²`,
           sonuc: `${sayi(r.Ae)} m²`,
         }
       : {
-          ad: 'Etkin eşdeğer alan',
+          ad: t.adimAe,
           formul: 'Ae = A + 3H·P + 9πH²',
           yerine: `${sayi(y.alan)} + 3·${sayi(H)}·${sayi(y.cevre)} + 9π·${sayi(H)}²`,
           sonuc: `${sayi(r.Ae)} m²`,
         },
-    { ad: 'Yer yıldırım yoğunluğu', formul: 'Ng = 0,04 · Nk^1,25', yerine: `0,04 · ${hassas(proje.Nk)}^1,25`, sonuc: `${hassas(r.Ng)} 1/km²·yıl` },
-    { ad: 'Beklenen yıldırım sıklığı', formul: 'Nd = Ae · Ng · C1 · 10⁻⁶', yerine: `${sayi(r.Ae)} · ${hassas(r.Ng)} · ${hassas(yapi.C1)} · 10⁻⁶`, sonuc: `${hassas(r.Nd)} 1/yıl` },
-    { ad: 'Yapı katsayısı', formul: 'C = C2 · C3 · C4 · C5', yerine: [yapi.C2, yapi.C3, yapi.C4, yapi.C5].map((c) => hassas(c)).join(' · '), sonuc: hassas(r.C) },
-    { ad: 'Kabul edilebilir sıklık', formul: 'Nc = 5,5 · 10⁻³ / C', yerine: `5,5 · 10⁻³ / ${hassas(r.C)}`, sonuc: `${hassas(r.Nc)} 1/yıl` },
+    { ad: t.adimNg, formul: t.ngFormul, yerine: t.ngYerine(h(proje.Nk)), sonuc: `${h(r.Ng)} ${t.birimNg}` },
+    { ad: t.adimNd, formul: 'Nd = Ae · Ng · C1 · 10⁻⁶', yerine: `${sayi(r.Ae)} · ${h(r.Ng)} · ${h(yapi.C1)} · 10⁻⁶`, sonuc: `${h(r.Nd)} ${t.birimYil}` },
+    { ad: t.adimC, formul: 'C = C2 · C3 · C4 · C5', yerine: [yapi.C2, yapi.C3, yapi.C4, yapi.C5].map((c) => h(c)).join(' · '), sonuc: h(r.C) },
+    { ad: t.adimNc, formul: t.ncFormul, yerine: t.ncYerine(h(r.C)), sonuc: `${h(r.Nc)} ${t.birimYil}` },
     r.istegeBagli
-      ? { ad: 'Karşılaştırma', formul: 'Nd ≤ Nc', yerine: `${hassas(r.Nd)} ≤ ${hassas(r.Nc)}`, sonuc: 'Koruma isteğe bağlı' }
-      : { ad: 'Gerekli etkinlik', formul: 'E = 1 − Nc / Nd', yerine: `1 − ${hassas(r.Nc)} / ${hassas(r.Nd)}`, sonuc: `${sayi(r.E, 4)} → ${r.seviye}` },
+      ? { ad: t.adimKarsilastirma, formul: 'Nd ≤ Nc', yerine: `${h(r.Nd)} ≤ ${h(r.Nc)}`, sonuc: t.istegeBagli }
+      : { ad: t.adimE, formul: 'E = 1 − Nc / Nd', yerine: `1 − ${h(r.Nc)} / ${h(r.Nd)}`, sonuc: `${sayi(r.E, 4)} → ${r.seviye}` },
   ];
   return (
     <details className="hesap-dokum">
-      <summary>Hesap dökümü</summary>
+      <summary>{t.dokum}</summary>
       <table className="hesap-dokum-tablo">
         <tbody>
           {adimlar.map((a) => (
@@ -56,8 +62,7 @@ function HesapDokumu({ y, yapi, proje }: { y: YapiSonucu; yapi: Yapi | undefined
         </tbody>
       </table>
       <p className="ipucu-kucuk hesap-dokum-not">
-        {manuel ? 'Boyutlar elle girildi (L × W).' : `A = taban alanı (${sayi(y.alan)} m²), P = çevre (${sayi(y.cevre)} m): çizilen poligondan.`} H = {sayi(H)} m. Seviye eşikleri: E &gt; 0,98 Seviye 1 + ek
-        önlem · &gt; 0,95 Seviye 1 · &gt; 0,90 Seviye 2 · &gt; 0,80 Seviye 3 · &gt; 0 Seviye 4.
+        {manuel ? t.manuelNot : t.poligonNot(sayi(y.alan), sayi(y.cevre))} H = {sayi(H)} m. {t.esikler}
       </p>
     </details>
   );
@@ -66,6 +71,9 @@ function HesapDokumu({ y, yapi, proje }: { y: YapiSonucu; yapi: Yapi | undefined
 export function HesapTablosu({ kapat }: { kapat: () => void }) {
   const { proje, sonuc } = useProje();
   const { bildir } = useEtkilesim();
+  const m = useMetinler();
+  const t = m.hesapTablosu;
+  const { sayi } = m.bicim;
   const yapilar = [...sonuc.yapilar].sort(
     (a, b) => Number(!!proje.yapilar.find((y) => y.id === b.yapiId)?.kritik_mi) - Number(!!proje.yapilar.find((y) => y.id === a.yapiId)?.kritik_mi),
   );
@@ -76,10 +84,10 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
   async function csvIndir() {
     try {
       // BOM: Excel'in Türkçe karakterleri doğru göstermesi için.
-      const yol = await dosyaKaydet(`${guvenliDosyaAdi(proje.isim)}-hesap-tablosu.csv`, `﻿${hesapTablosuCsv(sonuc)}`, { ad: 'CSV', uzantilar: ['csv'] });
-      if (yol) bildir(`CSV kaydedildi: ${yol}`, 'basari');
+      const yol = await dosyaKaydet(`${guvenliDosyaAdi(proje.isim)}-${t.csvDosyaAdi}.csv`, `﻿${hesapTablosuCsv(sonuc, m)}`, { ad: 'CSV', uzantilar: ['csv'] });
+      if (yol) bildir(t.csvKaydedildi(yol), 'basari');
     } catch (e) {
-      bildir(`CSV kaydedilemedi: ${e instanceof Error ? e.message : String(e)}`, 'hata');
+      bildir(t.csvKaydedilemedi(e instanceof Error ? e.message : String(e)), 'hata');
     }
   }
 
@@ -87,17 +95,17 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
     <Pencere
       acik
       kapat={kapat}
-      baslik="Ayrıntılı hesap"
+      baslik={t.baslik}
       boyut="tam"
       ustSag={
         <button className="mini-buton" onClick={csvIndir} disabled={sonuc.yapilar.length === 0}>
-          CSV kaydet
+          {t.csvKaydet}
         </button>
       }
     >
       {sonuc.dogrulama.hatalar.length > 0 && (
         <div className="uyari-blok hata">
-          <b>Eksik veya hatalı girdiler</b>
+          <b>{t.eksikGirdiler}</b>
           <ul>
             {sonuc.dogrulama.hatalar.map((h, i) => (
               <li key={i}>{h.mesaj}</li>
@@ -107,7 +115,7 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
       )}
       {sonuc.dogrulama.uyarilar.length > 0 && (
         <div className="uyari-blok">
-          <b>Gözden geçirilmesi önerilen noktalar</b>
+          <b>{t.gozdenGecir}</b>
           <ul>
             {sonuc.dogrulama.uyarilar.map((u, i) => (
               <li key={i}>{u.mesaj}</li>
@@ -118,31 +126,31 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
       {yapilar.length > 0 && (
         <div className="hesap-ozet">
           <div className="hesap-ozet-kutu">
-            <span className="hesap-ozet-sayi">{ozet.toplam}</span> yapı
+            <span className="hesap-ozet-sayi">{ozet.toplam}</span> {t.ozetYapi}
           </div>
           <div className="hesap-ozet-kutu tamam">
-            <span className="hesap-ozet-sayi">{ozet.yeterli}</span> koruma yeterli
+            <span className="hesap-ozet-sayi">{ozet.yeterli}</span> {t.ozetYeterli}
           </div>
           {ozet.istegeBagli > 0 && (
             <div className="hesap-ozet-kutu">
-              <span className="hesap-ozet-sayi">{ozet.istegeBagli}</span> koruma isteğe bağlı
+              <span className="hesap-ozet-sayi">{ozet.istegeBagli}</span> {t.ozetIstegeBagli}
             </div>
           )}
           <div className={`hesap-ozet-kutu ${eksik > 0 ? 'hata' : ''}`}>
-            <span className="hesap-ozet-sayi">{eksik}</span> tam korunmuyor
+            <span className="hesap-ozet-sayi">{eksik}</span> {t.ozetTamKorunmuyor}
           </div>
           {ozet.hesaplanamadi > 0 && (
             <div className="hesap-ozet-kutu hata">
-              <span className="hesap-ozet-sayi">{ozet.hesaplanamadi}</span> hesaplanamadı
+              <span className="hesap-ozet-sayi">{ozet.hesaplanamadi}</span> {t.ozetHesaplanamadi}
             </div>
           )}
           <div className="hesap-ozet-kutu sag">
-            Nk = {hassas(proje.Nk)} · Ng = {proje.Nk ? hassas(ngHesapla(proje.Nk)) : '-'} 1/km²·yıl
+            Nk = {hassas(m, proje.Nk)} · Ng = {proje.Nk ? hassas(m, ngHesapla(proje.Nk)) : '-'} {t.birimNg}
           </div>
         </div>
       )}
       {yapilar.length === 0 ? (
-        <p className="ipucu">Henüz yapı eklenmedi. Bir yapı ve en az bir paratoner ekleyince hesap tablosu burada görünür.</p>
+        <p className="ipucu">{t.yapiYok}</p>
       ) : (
         <div className="hesap-tablosu-govde">
           {yapilar.map((y) => {
@@ -152,7 +160,7 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
                 <div className="hesap-yapi-baslik">
                   <span className="hesap-yapi-isim">
                     {y.yapiIsim}
-                    {yapi?.kritik_mi && <span className="kritik-etiket">Kritik</span>}
+                    {yapi?.kritik_mi && <span className="kritik-etiket">{m.genel.kritik}</span>}
                   </span>
                   {y.risk && (
                     <span className="seviye-rozet" style={{ background: y.risk.renk }}>
@@ -160,7 +168,7 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
                     </span>
                   )}
                   <span className="durum-rozet" style={{ background: y.nihai.renk }}>
-                    Nihai: {y.nihai.etiket}
+                    {t.nihai(y.nihai.etiket)}
                   </span>
                   {y.risk && (
                     <span className="hesap-yapi-detay sag">
@@ -190,15 +198,15 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
                   <table className="hesap-tablo">
                     <thead>
                       <tr>
-                        <th>Paratoner</th>
+                        <th>{t.paratoner}</th>
                         <th>ΔT (µs)</th>
                         <th>h (m)</th>
                         <th>Rp (m)</th>
-                        <th>Mesafe en yakın</th>
-                        <th>Mesafe en uzak</th>
-                        <th>Marj en yakın</th>
-                        <th>Marj en uzak</th>
-                        <th>Durum</th>
+                        <th>{t.mesafeYakin}</th>
+                        <th>{t.mesafeUzak}</th>
+                        <th>{t.marjYakin}</th>
+                        <th>{t.marjUzak}</th>
+                        <th>{t.durum}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -206,7 +214,7 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
                         <tr key={s.paratonerId} className={s.paratonerId === y.birincilParatonerId ? 'hesap-satir-birincil' : ''}>
                           <td>
                             {s.paratonerIsim}
-                            {s.paratonerId === y.birincilParatonerId && <span className="birincil-etiket">Birincil</span>}
+                            {s.paratonerId === y.birincilParatonerId && <span className="birincil-etiket">{t.birincil}</span>}
                           </td>
                           {s.gecerli ? (
                             <>
@@ -237,12 +245,12 @@ export function HesapTablosu({ kapat }: { kapat: () => void }) {
                     </tbody>
                   </table>
                 ) : (
-                  y.hatalar.length === 0 && <p className="ipucu tablo-ici">Hesaba katılan paratoner yok.</p>
+                  y.hatalar.length === 0 && <p className="ipucu tablo-ici">{t.paratonerYok}</p>
                 )}
               </div>
             );
           })}
-          {enterpolasyonVar && <p className="ipucu-kucuk">* h, ESE tablosunda iki satır arasında; Rp doğrusal enterpolasyonla okundu.</p>}
+          {enterpolasyonVar && <p className="ipucu-kucuk">{t.enterpolasyon}</p>}
         </div>
       )}
     </Pencere>

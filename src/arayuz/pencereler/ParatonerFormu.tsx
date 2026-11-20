@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { kotMetni, paratonerTepeKotu, sayi, yeniParatoner, type LatLng, type Paratoner } from '../../core';
+import { paratonerTepeKotu, yeniParatoner, type LatLng, type Paratoner } from '../../core';
 import { useProje } from '../durum/ProjeSaglayici';
 import { DeltaTSecici } from '../paneller/ProjeParametreleriPaneli';
 import { Anahtar } from '../ortak/Anahtar';
 import { DegerListesi } from '../ortak/DegerListesi';
 import { Pencere } from '../ortak/Pencere';
 import { SayiGirdisi } from '../ortak/SayiGirdisi';
+import { useMetinler } from '../ortak/useMetinler';
 
 interface Props {
   /** Yeni paratoner için haritada tıklanan konum. */
@@ -17,6 +18,9 @@ interface Props {
 
 export function ParatonerFormu({ konum, duzenlenen, kapat, kaydet }: Props) {
   const { proje } = useProje();
+  const m = useMetinler();
+  const t = m.paratonerFormu;
+  const { sayi, kot: kotMetni } = m.bicim;
   const paratonerBazli = proje.deltaT_modu === 'paratoner';
   const [isim, setIsim] = useState(duzenlenen?.isim ?? `P${proje.paratonerler.length + 1}`);
   const [taban, setTaban] = useState<'kot' | 'yapi'>(duzenlenen?.yapi_id ? 'yapi' : 'kot');
@@ -53,51 +57,51 @@ export function ParatonerFormu({ konum, duzenlenen, kapat, kaydet }: Props) {
   }
 
   return (
-    <Pencere acik kapat={kapat} baslik={duzenlenen ? 'Paratoneri düzenle' : 'Yeni paratoner'}>
+    <Pencere acik kapat={kapat} baslik={duzenlenen ? t.baslikDuzenle : t.baslikYeni}>
       {!tabanVar ? (
         <>
-          <p className="uyari-metin">Önce en az bir kot seviyesi tanımlamanız gerekiyor.</p>
+          <p className="uyari-metin">{m.genel.onceKot}</p>
           <div className="modal-butonlar">
             <button className="ikincil-buton" onClick={kapat}>
-              Kapat
+              {m.ortak.kapat}
             </button>
           </div>
         </>
       ) : (
         <form onSubmit={gonder} className="form-dikey">
           <label>
-            İsim
+            {m.genel.isim}
             <input autoFocus value={isim} onChange={(e) => setIsim(e.target.value)} />
           </label>
 
-          <Anahtar id="manuel-konum" checked={manuelKonum} onCheckedChange={setManuelKonum} etiket="Koordinatları elle düzenle" />
+          <Anahtar id="manuel-konum" checked={manuelKonum} onCheckedChange={setManuelKonum} etiket={t.elleKoordinat} />
           {manuelKonum && (
             <div className="form-grid-2">
               <label>
-                Enlem
+                {t.enlem}
                 <SayiGirdisi deger={lat} degisti={setLat} />
               </label>
               <label>
-                Boylam
+                {t.boylam}
                 <SayiGirdisi deger={lng} degisti={setLng} />
               </label>
             </div>
           )}
 
           <div>
-            <div className="alan-etiketi">Paratonerin tabanı</div>
+            <div className="alan-etiketi">{t.taban}</div>
             <div className="form-grid-2">
               <button type="button" className={taban === 'kot' ? 'mod-aktif' : ''} onClick={() => setTaban('kot')}>
-                Kot seviyesinde
+                {t.kotta}
               </button>
               <button type="button" className={taban === 'yapi' ? 'mod-aktif' : ''} onClick={() => setTaban('yapi')} disabled={proje.yapilar.length === 0}>
-                Bir yapının üzerinde
+                {t.yapida}
               </button>
             </div>
           </div>
           {taban === 'kot' ? (
             <label>
-              Kot seviyesi
+              {t.kotSeviyesi}
               <select value={kotId} onChange={(e) => setKotId(e.target.value)}>
                 {proje.kot_seviyeleri.map((k) => (
                   <option key={k.id} value={k.id}>
@@ -108,7 +112,7 @@ export function ParatonerFormu({ konum, duzenlenen, kapat, kaydet }: Props) {
             </label>
           ) : (
             <label>
-              Yapı
+              {t.yapi}
               <select value={yapiId} onChange={(e) => setYapiId(e.target.value)}>
                 {proje.yapilar.map((y) => (
                   <option key={y.id} value={y.id}>
@@ -120,40 +124,40 @@ export function ParatonerFormu({ konum, duzenlenen, kapat, kaydet }: Props) {
           )}
 
           <label>
-            Mast yüksekliği (m) — {taban === 'yapi' ? 'yapının çatısından itibaren' : 'kot seviyesinden itibaren'}
-            <SayiGirdisi deger={mast} degisti={setMast} asgari={0} asgariHaric placeholder="örn. 9" />
+            {t.mast(taban === 'yapi')}
+            <SayiGirdisi deger={mast} degisti={setMast} asgari={0} asgariHaric placeholder={m.genel.ornek('9')} />
           </label>
-          {ucKotu !== null && <p className="ipucu-kucuk">Paratoner ucunun kotu: {kotMetni(ucKotu, 2)} m</p>}
+          {ucKotu !== null && <p className="ipucu-kucuk">{t.ucKotu(kotMetni(ucKotu, 2))}</p>}
 
           {paratonerBazli && (
             <label>
-              ΔT — bu paratonerin yayılım süresi
+              {t.deltaT}
               <DeltaTSecici deger={deltaT} degisti={setDeltaT} />
               <span className="ipucu-kucuk">
-                {deltaT === null ? (proje.deltaT ? `Seçilmezse projenin varsayılanı (${proje.deltaT} µs) kullanılır.` : 'Seçilmezse hesap yapılamaz (projede varsayılan ΔT yok).') : ''}
+                {deltaT === null ? (proje.deltaT ? t.deltaTVarsayilan(proje.deltaT) : t.deltaTYok) : ''}
               </span>
             </label>
           )}
 
           <label>
-            Cihaz (marka / model, rapor için)
-            <input value={cihaz} onChange={(e) => setCihaz(e.target.value)} placeholder={proje.cihaz?.trim() ? `Boşsa projenin cihazı: ${proje.cihaz.trim()}` : 'İsteğe bağlı'} />
+            {t.cihaz}
+            <input value={cihaz} onChange={(e) => setCihaz(e.target.value)} placeholder={proje.cihaz?.trim() ? t.cihazProje(proje.cihaz.trim()) : m.genel.istegeBagli} />
           </label>
 
           <div>
-            <div className="alan-etiketi">Haritadaki referans çemberleri (h, yalnızca görsel)</div>
+            <div className="alan-etiketi">{t.cemberler}</div>
             <DegerListesi degerler={esikler} degisti={setEsikler} />
           </div>
 
-          <Anahtar id="paratoner-etkin" checked={aktif} onCheckedChange={setAktif} etiket={aktif ? 'Etkin (hesaba katılır)' : 'Devre dışı (hesaba katılmaz)'} />
-          <p className="ipucu-kucuk">Koruma seviyesi her yapının kendi risk analizinden belirlenir; paratonerde ayrıca seçilmez.</p>
+          <Anahtar id="paratoner-etkin" checked={aktif} onCheckedChange={setAktif} etiket={aktif ? t.etkin : t.devreDisi} />
+          <p className="ipucu-kucuk">{t.seviyeNotu}</p>
 
           <div className="modal-butonlar">
             <button type="button" className="ikincil-buton" onClick={kapat}>
-              İptal
+              {m.ortak.iptal}
             </button>
             <button type="submit" className="buton-birincil" disabled={!gecerli}>
-              Kaydet
+              {m.genel.kaydet}
             </button>
           </div>
         </form>

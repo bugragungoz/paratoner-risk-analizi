@@ -3,13 +3,13 @@
 // anahtarsız. Toplu/önceden indirme yoktur; sağlayıcıların kuralları buna izin vermiyor.
 
 import type { TileLayerOptions } from 'leaflet';
+import type { Metinler } from '../../dil';
 import { tauriMi } from '../platform/tauri';
 import type { AnahtarDurumu, Saglayici } from './servisler';
 
 export type KatmanAdi = 'google_uydu' | 'google_hibrit' | 'google_yol' | 'esri_uydu' | 'osm';
 
 export interface KatmanTanimi {
-  isim: string;
   saglayici: Saglayici | null;
   /** Sabit atıf metni (Google'da görünen alana göre telif metni ayrıca eklenir). */
   atif: string;
@@ -17,22 +17,26 @@ export interface KatmanTanimi {
 }
 
 export const KATMANLAR: Record<KatmanAdi, KatmanTanimi> = {
-  google_uydu: { isim: 'Google uydu', saglayici: 'google', atif: 'Google Maps', options: { maxNativeZoom: 21, maxZoom: 22 } },
-  google_hibrit: { isim: 'Google hibrit', saglayici: 'google', atif: 'Google Maps', options: { maxNativeZoom: 21, maxZoom: 22 } },
-  google_yol: { isim: 'Google yol', saglayici: 'google', atif: 'Google Maps', options: { maxNativeZoom: 21, maxZoom: 22 } },
+  google_uydu: { saglayici: 'google', atif: 'Google Maps', options: { maxNativeZoom: 21, maxZoom: 22 } },
+  google_hibrit: { saglayici: 'google', atif: 'Google Maps', options: { maxNativeZoom: 21, maxZoom: 22 } },
+  google_yol: { saglayici: 'google', atif: 'Google Maps', options: { maxNativeZoom: 21, maxZoom: 22 } },
   esri_uydu: {
-    isim: 'Esri uydu',
     saglayici: 'esri',
     atif: 'Powered by Esri · Esri, Maxar, Earthstar Geographics, and the GIS User Community',
     options: { maxNativeZoom: 19, maxZoom: 22 },
   },
-  osm: { isim: 'OpenStreetMap', saglayici: null, atif: '© OpenStreetMap katkıda bulunanlar', options: { maxNativeZoom: 19, maxZoom: 22 } },
+  osm: { saglayici: null, atif: '© OpenStreetMap contributors', options: { maxNativeZoom: 19, maxZoom: 22 } },
 };
 
 export const KATMAN_ADLARI = Object.keys(KATMANLAR) as KatmanAdi[];
 
 export function katmanTanimi(ad: string): KatmanTanimi {
   return KATMANLAR[ad as KatmanAdi] ?? KATMANLAR.osm;
+}
+
+/** Katmanın sabit atıf metni, dile göre (OpenStreetMap atfı OSM'nin önerdiği biçimde çevrilir). */
+export function katmanAtfi(ad: string, m: Metinler): string {
+  return ad === 'osm' || !(ad in KATMANLAR) ? m.katman.osmAtif : katmanTanimi(ad).atif;
 }
 
 /** Katman kullanılabilir mi: anahtarlı katmanlar yalnızca masaüstünde ve anahtar girilmişse. */

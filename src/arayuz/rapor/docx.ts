@@ -99,6 +99,7 @@ const bosluk = (once = 120) => new Paragraph({ spacing: { before: once }, childr
 /** Kapağın altındaki "Hazırlayan" bloğu: ad, unvan, sicil, tarih ve imza. Sayfada ortalanır. */
 function imzaBlogu(r: RaporIcerigi, imza: RaporGorseli | null): (Paragraph | Table)[] {
   const m = r.muhendis;
+  const e = r.etiketler;
   const kenar = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
   const satir = (anahtar: string, deger: string) =>
     new TableRow({
@@ -116,7 +117,7 @@ function imzaBlogu(r: RaporIcerigi, imza: RaporGorseli | null): (Paragraph | Tab
       alignment: AlignmentType.CENTER,
       spacing: { before: 900, after: 120 },
       border: { top: { style: BorderStyle.SINGLE, size: 4, color: KENAR, space: 12 } },
-      children: [run('Hazırlayan', { kalin: true, boyut: P_BASLIK2, renk: LACIVERT })],
+      children: [run(e.hazirlayan, { kalin: true, boyut: P_BASLIK2, renk: LACIVERT })],
     }),
     new Table({
       alignment: AlignmentType.CENTER,
@@ -124,13 +125,13 @@ function imzaBlogu(r: RaporIcerigi, imza: RaporGorseli | null): (Paragraph | Tab
       columnWidths: [2200, 4400],
       borders: { top: kenar, bottom: kenar, left: kenar, right: kenar, insideHorizontal: kenar, insideVertical: kenar },
       rows: [
-        satir('Ad soyad', m.ad || '-'),
-        satir('Unvan', m.unvan || '-'),
-        satir('EMO sicil no', m.sicilNo || '-'),
-        satir('Tarih', m.tarih),
+        satir(e.adSoyad, m.ad || '-'),
+        satir(e.unvan, m.unvan || '-'),
+        satir(e.sicilNo, m.sicilNo || '-'),
+        satir(e.tarih, m.tarih),
         new TableRow({
           children: [
-            new TableCell({ width: { size: 2200, type: WidthType.DXA }, margins: { top: 40, bottom: 40, left: 0, right: 80 }, children: [new Paragraph({ children: [run('İmza', { kalin: true })] })] }),
+            new TableCell({ width: { size: 2200, type: WidthType.DXA }, margins: { top: 40, bottom: 40, left: 0, right: 80 }, children: [new Paragraph({ children: [run(e.imza, { kalin: true })] })] }),
             new TableCell({ width: { size: 4400, type: WidthType.DXA }, margins: { top: 40, bottom: 40, left: 80, right: 80 }, children: [imzaHucresi] }),
           ],
         }),
@@ -151,8 +152,9 @@ function kapak(r: RaporIcerigi, logo: RaporGorseli | null, imza: RaporGorseli | 
     ortali([run(k.proje, { kalin: true, boyut: 26, renk: LACIVERT })], 0),
     ortali([run(k.adres)], 0, 800),
   );
-  if (k.raporNo) p.push(ortali([run(`Rapor no: ${k.raporNo}`)], 0));
-  p.push(ortali([run(`Revizyon: ${k.revizyon}`)], 0), ortali([run(`Rapor tarihi: ${k.tarih}`)], 0), ...imzaBlogu(r, imza), new Paragraph({ children: [new PageBreak()] }));
+  const e = r.etiketler;
+  if (k.raporNo) p.push(ortali([run(`${e.raporNo}: ${k.raporNo}`)], 0));
+  p.push(ortali([run(`${e.revizyon}: ${k.revizyon}`)], 0), ortali([run(`${e.raporTarihi}: ${k.tarih}`)], 0), ...imzaBlogu(r, imza), new Paragraph({ children: [new PageBreak()] }));
   return p;
 }
 
@@ -202,8 +204,8 @@ export function raporBelgesi(r: RaporIcerigi, gorseller: RaporGorselleri): Docum
       }
       case 'icindekiler':
         c.push(
-          new Paragraph({ spacing: { before: 360, after: 160 }, children: [run('İçindekiler', { kalin: true, boyut: P_BASLIK1, renk: LACIVERT })] }),
-          new TableOfContents('İçindekiler', {
+          new Paragraph({ spacing: { before: 360, after: 160 }, children: [run(r.etiketler.icindekiler, { kalin: true, boyut: P_BASLIK1, renk: LACIVERT })] }),
+          new TableOfContents(r.etiketler.icindekiler, {
             hyperlink: true,
             headingStyleRange: '1-2',
             // Word açılışta sayfa numaralarını günceller; güncellenmezse başlıklar yine görünür.
@@ -224,7 +226,7 @@ export function raporBelgesi(r: RaporIcerigi, gorseller: RaporGorselleri): Docum
     children: [
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ font: FONT, size: P_KUCUK, color: GRI, children: ['Sayfa ', PageNumber.CURRENT, ' / ', PageNumber.TOTAL_PAGES] })],
+        children: [new TextRun({ font: FONT, size: P_KUCUK, color: GRI, children: [`${r.etiketler.sayfa} `, PageNumber.CURRENT, ' / ', PageNumber.TOTAL_PAGES] })],
       }),
     ],
   });
@@ -233,10 +235,10 @@ export function raporBelgesi(r: RaporIcerigi, gorseller: RaporGorselleri): Docum
   return new Document({
     creator: 'bugragungoz',
     title: r.belgeBasligi,
-    description: 'Paratoner Risk Analizi uygulaması ile üretilmiştir — github.com/bugragungoz',
+    description: r.etiketler.belgeAciklamasi,
     features: { updateFields: true },
     styles: {
-      default: { document: { run: { font: FONT, size: P_GOVDE } } },
+      default: { document: { run: { font: FONT, size: P_GOVDE, language: { value: r.etiketler.dil } } } },
       paragraphStyles: [
         { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true, run: { font: FONT, size: P_BASLIK1, bold: true, color: LACIVERT } },
         { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', quickFormat: true, run: { font: FONT, size: P_BASLIK2, bold: true, color: LACIVERT } },

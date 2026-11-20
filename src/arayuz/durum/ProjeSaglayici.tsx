@@ -2,10 +2,11 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
 import { onbellekliHesap, yeniProje, type Proje, type ProjeSonucu } from '../../core';
+import { metinler } from '../../dil';
 import { ANAHTARSIZ, anahtarDurumu, type AnahtarDurumu } from '../harita/servisler';
 import { useEtkilesim } from '../ortak/Etkilesim';
 import { Wordmark } from '../ortak/Logo';
-import { otomatikKayitYaz, tauriMi } from '../platform/tauri';
+import { dilAyarla, otomatikKayitYaz, tauriMi } from '../platform/tauri';
 import { ayarlariKaydet, ayarlariYukle, etkinTema, type UygulamaAyarlari } from './ayarlar';
 import { BOS_DEPO, depoIndirgeyici } from './depo';
 import {
@@ -81,9 +82,16 @@ const notOlustur = (a: AcilanProje): AcilisNotu | null =>
   a.uyarilar.length || a.proje.deltaT_onay_gerekli ? { uyarilar: a.uyarilar, deltaTOnayi: !!a.proje.deltaT_onay_gerekli } : null;
 
 export function ProjeSaglayici({ children }: { children: ReactNode }) {
-  const { bildir } = useEtkilesim();
+  const { bildir, etiketleriAyarla } = useEtkilesim();
   const [depo, dispatch] = useReducer(depoIndirgeyici, BOS_DEPO);
   const [ayarlar, setAyarlar] = useState<UygulamaAyarlari>(ayarlariYukle);
+  // Arayüz dili: hesap sonucunun etiketleri ve mesajları da bu dilde üretilir.
+  const m = useMemo(() => metinler(ayarlar.dil), [ayarlar.dil]);
+  useEffect(() => {
+    document.documentElement.lang = ayarlar.dil;
+    dilAyarla(ayarlar.dil);
+    etiketleriAyarla({ vazgec: m.genel.vazgec, tamam: m.genel.tamam, onayla: m.genel.onayla, kapat: m.genel.kapatEsc, beklenmeyenHata: m.genel.beklenmeyenHata });
+  }, [m, ayarlar.dil, etiketleriAyarla]);
   const [haritaAnahtarlari, setHaritaAnahtarlari] = useState<AnahtarDurumu>(ANAHTARSIZ);
   const haritaAnahtarlariYenile = useCallback(async () => setHaritaAnahtarlari(await anahtarDurumu()), []);
   useEffect(() => {
@@ -125,11 +133,13 @@ export function ProjeSaglayici({ children }: { children: ReactNode }) {
   // İlk açılış: son çalışma oturumu (yoksa eski sürümün oturumu, o da yoksa yeni proje).
   useEffect(() => {
     let iptal = false;
-    oturumYukle().then(({ acilan, hata }) => {
+    // Yalnızca açılışta çalışır: dil, kayıtlı ayardan okunur (dil değişince oturum yeniden yüklenmesin).
+    const ilk = metinler(ayarlariYukle().dil);
+    oturumYukle(ilk).then(({ acilan, hata }) => {
       if (iptal) return;
       if (acilan) projeAc(acilan);
       else {
-        const p = yeniProje('Yeni Proje');
+        const p = yeniProje(ilk.genel.yeniProjeAdi);
         dispatch({ tur: 'yukle', proje: p });
         setKaydedilen(p);
       }
@@ -191,17 +201,17 @@ export function ProjeSaglayici({ children }: { children: ReactNode }) {
         console.error('Otomatik kayıt başarısız:', e);
         if (!otomatikHataGosterildi.current) {
           otomatikHataGosterildi.current = true;
-          bildir(`Otomatik kayıt yapılamadı: ${e instanceof Error ? e.message : String(e)}`, 'hata');
+          bildir(m.dosyaIslem.otomatikKayitYapilamadi(e instanceof Error ? e.message : String(e)), 'hata');
         }
       }
     }, 1500);
     return () => clearTimeout(z);
-  }, [proje, kaydedilmemis, ayarlar.otomatikKayit, ayarlar.otomatikKayitKonumu, bildir]);
+  }, [proje, kaydedilmemis, ayarlar.otomatikKayit, ayarlar.otomatikKayitKonumu, bildir, m]);
 
   // Rapor numarası, adres, proje adı gibi hesaba girmeyen alanlar yazılırken hesap yinelenmez:
   // büyük projede her tuşta yüzlerce milisaniyelik hesap, yazmayı takılır hale getiriyordu.
   const [hesapla] = useState(onbellekliHesap);
-  const sonuc = useMemo(() => (proje ? hesapla(proje) : null), [proje, hesapla]);
+  const sonuc = useMemo(() => (proje ? hesapla(proje, m) : null), [proje, hesapla, m]);
 
   const guncelle = useCallback((fn: (p: Proje) => Proje, birlestir?: string) => {
     dispatch(birlestir === undefined ? { tur: 'guncelle', fn } : { tur: 'guncelle', fn, birlestir });
@@ -211,12 +221,12 @@ export function ProjeSaglayici({ children }: { children: ReactNode }) {
   const ayarGuncelle = useCallback((d: Partial<UygulamaAyarlari>) => setAyarlar((a) => ({ ...a, ...d })), []);
 
   const yeniProjeBaslat = useCallback(() => {
-    const p = yeniProje('Yeni Proje');
+    const p = yeniProje(m.genel.yeniProjeAdi);
     dispatch({ tur: 'yukle', proje: p });
     setKaynak({ dosyaYolu: null, dosyaAdi: null });
     setKaydedilen(p);
     setAcilisNotu(null);
-  }, []);
+  }, [m]);
 
   const kaydedildi = useCallback(
     (p: Proje, yol: string | null, ad: string) => {
@@ -293,7 +303,7 @@ export function ProjeSaglayici({ children }: { children: ReactNode }) {
     return (
       <div className="yukleniyor-ekrani">
         <Wordmark />
-        <span>Proje yükleniyor…</span>
+        <span>{m.genel.projeYukleniyor}</span>
       </div>
     );
   return <Baglam.Provider value={deger}>{children}</Baglam.Provider>;
