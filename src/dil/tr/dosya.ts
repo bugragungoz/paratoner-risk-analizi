@@ -43,7 +43,6 @@ export const dosyaTr = {
   cihaz: 'Cihaz bilgisi',
   raporNumarasi: 'Rapor numarası',
   parselSiniri: 'Parsel sınırı',
-  yerelOrijin: 'Yerel başlangıç noktası',
   cokBuyuk: 'Dosya bir proje dosyası için fazla büyük.',
   jsonDegil: 'Dosya okunamadı: geçerli bir JSON değil.',
   dosyaSurumu: 'Dosya sürümü',

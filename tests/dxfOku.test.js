@@ -1,10 +1,8 @@
-// DXF okuyucu: ezdxf ile üretilmiş örnek dosyalar (tests/veri/dxf) ve kendi R12 çıktımız.
+// DXF okuyucu: ezdxf ile üretilmiş örnek dosyalar ve programın eski R12 çıktısı (tests/veri/dxf).
 // Beklenen değerler dosyayı üreten betikteki geometriden elle hesaplanmıştır.
 import { describe, test, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import * as ck from '../src/core';
-import { metinler } from '../src/dil';
-import { kanitSenaryosu } from './veri/projeler';
 
 const oku = (ad) => new Uint8Array(readFileSync(new URL(`./veri/dxf/${ad}`, import.meta.url)));
 const katmanParcalari = (a, ad) => {
@@ -107,22 +105,20 @@ describe('DXF okuma: R2000 (ANSI_1254, milimetre, POLYLINE)', () => {
   });
 });
 
-describe('DXF okuma: kendi R12 çıktımız', () => {
-  test('dışa aktarılan çizim geri okunur: katmanlar, daireler ve Türkçe katman yok sorunu', () => {
-    const p = kanitSenaryosu({ deltaT: 30 });
-    const model = ck.dxfCizimi(p, ck.projeyiHesapla(p), { tur: 'turef', dilim: 33 }, metinler('tr'), 'test');
-    const a = ck.dxfCoz(ck.dxfBaytlari(model));
+describe('DXF okuma: R12 (AC1009, Windows-1254, POLYLINE/VERTEX)', () => {
+  // ornek-r12.dxf: programın 1.10 sürümündeki R12 yazıcısının kanıt senaryosu çıktısı (TUREF / TM33, metre).
+  test('katmanlar, kapalı çoklu çizgiler ve daireler', () => {
+    const a = ck.dxfCoz(oku('ornek-r12.dxf'));
     expect(a.surum).toBe('AC1009');
-    const beklenen = model.ogeler.filter((o) => o.tur === 'cokgen' || o.tur === 'daire').length;
-    expect(a.parcalar).toHaveLength(beklenen);
-    // Yapı köşeleri aynı koordinatta (TUREF, metre).
-    const yapi = model.ogeler.find((o) => o.tur === 'cokgen' && o.katman === 'YAPI_KORUNMUYOR');
+    expect(a.parcalar).toHaveLength(10);
+    // Yapı köşeleri aynı koordinatta.
+    const yapi = [[482896.3351, 4418444.8113], [483046.5416, 4418444.4765], [483046.5859, 4418464.4249], [482896.3798, 4418464.7597]];
     const okunan = katmanParcalari(a, 'YAPI_KORUNMUYOR');
-    expect(okunan.some((q) => yapi.noktalar.every((n) => icerir(q, n, 1e-4)))).toBe(true);
-    // Rp daireleri: yarıçap korunur.
-    const daire = model.ogeler.find((o) => o.tur === 'daire' && o.katman === 'RP_DAIRE');
-    const okunanDaire = katmanParcalari(a, 'RP_DAIRE').find((q) => Math.abs(sinir(q).maxX - (daire.merkez[0] + daire.yaricap)) < 1e-3);
-    for (const [x, y] of noktalar(okunanDaire)) expect(Math.hypot(x - daire.merkez[0], y - daire.merkez[1])).toBeCloseTo(daire.yaricap, 3);
+    expect(okunan.some((q) => q.kapali && yapi.every((n) => icerir(q, n, 1e-4)))).toBe(true);
+    // Rp dairesi: bütün köşeler merkezden yarıçap uzaklıkta.
+    const [mx, my, r] = [482891.3506, 4418454.7968, 63.0002];
+    const daire = katmanParcalari(a, 'RP_DAIRE').find((q) => Math.abs(sinir(q).maxX - (mx + r)) < 1e-3);
+    for (const [x, y] of noktalar(daire)) expect(Math.hypot(x - mx, y - my)).toBeCloseTo(r, 3);
   });
 });
 
@@ -131,7 +127,7 @@ describe('DXF okuma hataları', () => {
     const ikili = new TextEncoder().encode('AutoCAD Binary DXF\r\n\x1a\x00xxxx');
     expect(() => ck.dxfCoz(ikili)).toThrow(ck.DxfOkumaHatasi);
     expect(() => ck.dxfCoz(new TextEncoder().encode('bu bir dxf değil\nx\n'))).toThrow(ck.DxfOkumaHatasi);
-    const bos = ck.dxfBaytlari({ katmanlar: [{ ad: 'A', renk: 1 }], ogeler: [{ tur: 'yazi', katman: 'A', konum: [0, 0], yukseklik: 1, metin: 'x' }] });
+    const bos = new TextEncoder().encode(['0', 'SECTION', '2', 'ENTITIES', '0', 'TEXT', '8', 'A', '10', '0', '20', '0', '30', '0', '40', '1', '1', 'x', '0', 'ENDSEC', '0', 'EOF', ''].join('\r\n'));
     expect(() => ck.dxfCoz(bos)).toThrow(/çizgi yok/);
   });
 

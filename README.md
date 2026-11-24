@@ -39,9 +39,9 @@ dışından kurulduğu için telefon bilinmeyen uygulamaları yükleme izni iste
   harita şekli.
 - **Harita.** Google ve Esri uydu görüntüsü kullanıcının kendi anahtarıyla, anahtar yoksa
   OpenStreetMap; yalnızca resmi servisler. Vaziyet planı DXF altlık olarak açılır; TUREF
-  koordinatlıysa yerine oturur, değilse iki noktayla hizalanır.
-- **Dışa ve içe aktarma.** Google Earth (KML / KMZ) ve AutoCAD DXF (TUREF / TM ya da yerel
-  koordinat); sonuçlar ve koruma daireleri ayrı katmanlarda. KML'den yapı ve paratoner alınır.
+  koordinatlıysa yerine oturur, değilse taşınıp döndürülerek uydu görüntüsüne oturtulur.
+- **Dışa ve içe aktarma.** Google Earth (KML / KMZ); KML'den yapı ve paratoner alınır. Paratonerler
+  altlık DXF'ine, çizimin kendi koordinatlarında yazılır ve AutoCAD'de asıl çizime yapıştırılır.
 - **Saha uygulaması.** Android uygulaması Keşif sahada kot seviyelerini ve paratoner noktalarını
   konum doğruluğuyla kaydeder; keşif KML olarak paylaşılır ve programa aktarılır.
 
@@ -65,6 +65,23 @@ Girdi eksik ya da standart dışıysa program hesap yapmaz ve "hesaplanamadı" d
 | Gerekli etkinlik | E = 1 − Nc / Nd |
 | Koruma seviyesi | E > 0,98: I ve ek önlem · > 0,95: I · > 0,90: II · > 0,80: III · diğer: IV |
 | Koruma yarıçapı | Rp üretici tablosundan (ΔT = 15/30/45/60 µs), satırlar arasında doğrusal ara değerle okunur. Çapraz kontrol: √(2rh − h² + ΔL(2r + ΔL)), r = 20/30/45/60 m |
+
+</details>
+
+<details>
+<summary><b>AutoCAD (DWG) ile çalışma</b></summary>
+
+Program DWG okumaz; çizim DXF olarak alınır, paratonerler aynı DXF ile geri verilir. İki yönde de
+AutoCAD'in **Paste to Original Coordinates** (`PASTEORIG`) komutu kullanılır; düz Ctrl+V koordinatları
+kaydırır.
+
+1. DWG'de aktarılacak kısım kopyalanır; birimi asıl DWG ile aynı yapılmış yeni bir çizime `PASTEORIG`
+   ile yapıştırılır ve AutoCAD 2018 DXF olarak kaydedilir.
+2. Programda Dosya › DXF altlık ekle ile açılır (birim metre alınır), ince ayarla uydu görüntüsüne
+   oturtulur ve konumu kilitlenir. Yapılar ve paratonerler altlığın üstüne çizilir.
+3. Dosya › Paratonerleri altlık DXF'ine yaz: paratonerler PT_PARATONER katmanına eklenmiş bir kopya
+   asıl dosyanın yanına kaydedilir; plandaki hiçbir şey değişmez.
+4. Bu katman AutoCAD'de kopyalanır ve asıl DWG'ye `PASTEORIG` ile yapıştırılır.
 
 </details>
 

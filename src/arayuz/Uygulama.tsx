@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { cizimKoordinati, HizalamaHatasi, ikiNoktaHizala, projeOrtasi, type LatLng, type Paratoner, type Seviye, type XY, type Yapi } from '../core';
+import { projeOrtasi, type LatLng, type Paratoner, type Seviye, type Yapi } from '../core';
 import { paratonerEkle, paratonerGuncelle, paratonerTasi, parselAyarla, poligonGuncelle, yapiEkle, yapiGuncelle } from './durum/eylemler';
 import { useProje } from './durum/ProjeSaglayici';
 import { useDosyaIslemleri } from './durum/useDosyaIslemleri';
@@ -20,9 +20,10 @@ import { HesapTablosu } from './pencereler/HesapTablosu';
 import { ParatonerFormu } from './pencereler/ParatonerFormu';
 import { RaporSihirbazi } from './pencereler/RaporSihirbazi';
 import { KmlIceAktarPenceresi } from './pencereler/KmlIceAktarPenceresi';
-import { DxfDisaAktarPenceresi } from './pencereler/DxfDisaAktarPenceresi';
+import { DxfKilavuzuPenceresi } from './pencereler/DxfKilavuzuPenceresi';
 import { AltlikPaneli } from './paneller/AltlikPaneli';
 import { useAltlik } from './durum/useAltlik';
+import { useAltligaYaz } from './durum/useAltligaYaz';
 import { useKmlIslemleri } from './durum/useKmlIslemleri';
 import { StreetViewPaneli } from './pencereler/StreetViewPaneli';
 import { HakkindaPenceresi } from './pencereler/HakkindaPenceresi';
@@ -39,7 +40,7 @@ const ilkGorunum = (): HaritaGorunumu => ({ hEsikleri: new Set<number>(), seviye
 
 export function Uygulama() {
   const { proje, guncelle, geriAl, yinele, geriAlinabilir, yinelenebilir, kaydedilmemis, acilisNotu, ayarlar, ayarGuncelle } = useProje();
-  const { onayla, bildir } = useEtkilesim();
+  const { onayla } = useEtkilesim();
   const m = useMetinler();
   const haritaRef = useRef<HaritaApi | null>(null);
 
@@ -52,7 +53,7 @@ export function Uygulama() {
   const [yeniYapiPoligonu, setYeniYapiPoligonu] = useState<LatLng[] | null>(null);
   const [duzenlenenYapi, setDuzenlenenYapi] = useState<Yapi | null>(null);
   const [poligonDuzenlenen, setPoligonDuzenlenen] = useState<string | null>(null);
-  const [acikPencere, setAcikPencere] = useState<'hesap' | 'rapor' | 'ayarlar' | 'hakkinda' | 'kisayollar' | 'dxf' | null>(null);
+  const [acikPencere, setAcikPencere] = useState<'hesap' | 'rapor' | 'ayarlar' | 'hakkinda' | 'kisayollar' | 'dxfKilavuzu' | null>(null);
   const [ayarSekmesi, setAyarSekmesi] = useState<AyarSekmesi>('proje');
 
   // Yalnızca geliştirme modunda: tarayıcıda uçtan uca test için harita API'si.
@@ -87,51 +88,11 @@ export function Uygulama() {
     () => ({ harita: haritaRef.current?.merkez() ?? null, proje: projeOrtasi(proje) }),
     () => setTimeout(() => haritaRef.current?.altligaGit(), 150),
   );
-  // İki nokta hizalaması: çizimde seçilen noktalar (çizim koordinatı ve haritadaki yeri) ve haritadaki karşılıkları.
-  const [hizalamaDurumu, setHizalama] = useState<{ serbest: boolean; cizim: XY[]; cizimYeri: LatLng[]; harita: LatLng[] } | null>(null);
-  const hizalama = mod === 'altlik' ? hizalamaDurumu : null;
+  const altligaYaz = useAltligaYaz();
   const altlikGorunumu = useMemo<AltlikGorunumu | null>(
-    () =>
-      altlik.ayar && altlik.cozum
-        ? { cozum: altlik.cozum, ayar: altlik.ayar, cizimNoktalari: hizalama?.cizimYeri ?? [], haritaNoktalari: hizalama?.harita ?? [] }
-        : null,
-    [altlik.ayar, altlik.cozum, hizalama],
-  );
-  const hizalamaBaslat = useCallback(
-    (serbest: boolean) => {
-      if (!altlik.ayar || !altlik.cozum) return;
-      setHizalama({ serbest, cizim: [], cizimYeri: [], harita: [] });
-      setMod('altlik');
-    },
+    () => (altlik.ayar && altlik.cozum ? { cozum: altlik.cozum, ayar: altlik.ayar } : null),
     [altlik.ayar, altlik.cozum],
   );
-  const altlikNoktasi = (nokta: LatLng) => {
-    const a = altlik.ayar;
-    if (!hizalama || !a) return;
-    const cizimSirasi = hizalama.cizim.length === hizalama.harita.length;
-    if (cizimSirasi) {
-      const yer = haritaRef.current?.altlikKosesi(nokta) ?? nokta;
-      setHizalama({ ...hizalama, cizim: [...hizalama.cizim, cizimKoordinati(a.hizalama, a.birim, yer)], cizimYeri: [...hizalama.cizimYeri, yer] });
-      return;
-    }
-    const yer = haritaRef.current?.ogeKosesi(nokta) ?? nokta;
-    const harita = [...hizalama.harita, yer];
-    if (harita.length < 2) {
-      setHizalama({ ...hizalama, harita });
-      return;
-    }
-    try {
-      const s = ikiNoktaHizala(hizalama.cizim[0]!, hizalama.cizim[1]!, harita[0]!, harita[1]!, a.birim, hizalama.serbest);
-      altlik.degistir({ hizalama: s.hizalama }, 'altlik-hizala');
-      const fark = m.cizim.yuzde(m.bicim.sayi(Math.abs(s.olcekOrani - 1) * 100, 2));
-      const aci = s.hizalama.tur === 'benzerlik' ? m.bicim.sayi((s.hizalama.aci * 180) / Math.PI, 2) : '0';
-      bildir(m.altlik.hizalandi(aci, fark), 'basari');
-      if (Math.abs(s.olcekOrani - 1) > 0.01) bildir(m.altlik.olcekUyarisi(fark), 'hata');
-    } catch (e) {
-      bildir(m.altlik.hizalanamadi(e instanceof HizalamaHatasi ? m.altlik.ayniNokta : e instanceof Error ? e.message : String(e)), 'hata');
-    }
-    setMod('yok');
-  };
   const { kaydet, farkliKaydet, ac, yeni } = dosya;
 
   // Pencere başlığı: proje adı ve kaydedilmemiş değişiklik işareti (•).
@@ -251,7 +212,7 @@ export function Uygulama() {
       <UstBar
         dosya={dosya}
         kml={kml}
-        dxfAc={() => setAcikPencere('dxf')}
+        dxfYaz={altligaYaz.yaz}
         altlikEkle={altlik.ekle}
         git={(lat, lng) => haritaRef.current?.git(lat, lng)}
         merkez={() => haritaRef.current?.merkez() ?? null}
@@ -259,6 +220,7 @@ export function Uygulama() {
         raporAc={() => setAcikPencere('rapor')}
         ayarlarAc={ayarlariAc}
         kisayollarAc={() => setAcikPencere('kisayollar')}
+        dxfKilavuzuAc={() => setAcikPencere('dxfKilavuzu')}
         hakkindaAc={() => setAcikPencere('hakkinda')}
       />
 
@@ -269,7 +231,7 @@ export function Uygulama() {
           <KotPaneli />
           <OgeListesi paratonerDuzenle={setDuzenlenenParatoner} yapiDuzenle={setDuzenlenenYapi} />
           <GorunumPaneli gorunum={gorunum} degistir={setGorunum} />
-          <AltlikPaneli altlik={altlik} hizalamaBaslat={hizalamaBaslat} hizalamada={mod === 'altlik'} altligaGit={() => haritaRef.current?.altligaGit()} />
+          <AltlikPaneli altlik={altlik} altligaGit={() => haritaRef.current?.altligaGit()} />
           <Sorumluluk />
         </aside>
 
@@ -278,7 +240,6 @@ export function Uygulama() {
             ref={haritaRef}
             mod={mod}
             altlik={altlikGorunumu}
-            onAltlikNoktasi={altlikNoktasi}
             moddanCik={() => setMod('yok')}
             gorunum={gorunum}
             poligonDuzenlenenYapiId={poligonDuzenlenen}
@@ -304,11 +265,6 @@ export function Uygulama() {
           />
           <Lejant gorunum={gorunum} />
           {olcum !== null && <div className="olcut-sonuc">{m.cizim.toplamMesafe(m.bicim.sayi(olcum))}</div>}
-          {mod === 'altlik' && hizalama && (
-            <div className="olcut-sonuc">
-              {m.altlik.adimlar[hizalama.cizim.length + hizalama.harita.length]} · {m.altlik.vazgec}
-            </div>
-          )}
           {poligonDuzenlenen && (
             <div className="olcut-sonuc">
               {m.cizim.poligonDuzenle}
@@ -373,7 +329,7 @@ export function Uygulama() {
       {acikPencere === 'ayarlar' && <AyarlarPenceresi kapat={() => setAcikPencere(null)} ilkSekme={ayarSekmesi} kurtarmaAc={dosya.kurtarmaAc} />}
       {acikPencere === 'hakkinda' && <HakkindaPenceresi kapat={() => setAcikPencere(null)} />}
       {acikPencere === 'kisayollar' && <KisayollarPenceresi kapat={() => setAcikPencere(null)} />}
-      {acikPencere === 'dxf' && <DxfDisaAktarPenceresi kapat={() => setAcikPencere(null)} />}
+      {acikPencere === 'dxfKilavuzu' && <DxfKilavuzuPenceresi kapat={() => setAcikPencere(null)} />}
       {kml.onizleme && (
         <KmlIceAktarPenceresi
           belge={kml.onizleme.belge}

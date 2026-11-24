@@ -3,6 +3,41 @@
 Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; sürümler
 [anlamsal sürümleme](https://semver.org/lang/tr/) kullanır.
 
+## 1.11.0 (2026-11-24)
+
+AutoCAD ile çalışma: çizim DXF altlık olarak alınır, paratonerler aynı DXF ile geri verilir.
+
+### Eklendi
+
+- **Paratonerleri altlık DXF'ine yazma:** Dosya menüsü › Paratonerleri altlık DXF'ine yaz.
+  Paratonerler (sembol, ad ve mast yazısı) altlık çiziminin kendi koordinatlarında PT_PARATONER
+  katmanına eklenir; plandaki hiçbir şey silinmez ya da değişmez, çizimdeki eski paratonerler kendi
+  katmanlarında kalır. Dosya asıl çizimin yanına "-paratoner" ekiyle kaydedilir; her yazma asıl altlık
+  dosyasından başlar, aynı "-paratoner" dosyası yeniden seçilirse önceki çıktının yerini alır. AutoCAD'de
+  bu katman kopyalanıp asıl DWG'ye Paste to Original Coordinates (PASTEORIG) ile yapıştırılınca
+  paratonerler yerine oturur.
+- **AutoCAD ile çalışma kılavuzu:** Yardım menüsünde; DWG'den DXF altlığa ve paratonerlerin DWG'ye
+  geri verilmesi adım adım.
+- **DXF altlık:** konum kilidi (oturtulduktan sonra ince ayar ve birim değiştirilemez) ve tek renk
+  kipinde renk seçimi.
+
+### Değişti
+
+- **DXF altlık:** yerleştirme sadeleşti. Çizim haritanın o anki ortasına konur, ince ayarla taşınıp
+  döndürülerek uydu görüntüsüne oturtulur ve konumu kilitlenir. "İki nokta ile hizala", "Ölçeği
+  noktalardan bul" ve yerleşim seçimi kaldırıldı; TUREF / TM koordinatlı çizim yine kendiliğinden
+  yerine oturur. Ölçek çizim biriminden gelir, elle değiştirilmez: 1:1 planı görüntüye uydurmak
+  yapı ölçülerini bozar.
+- **DXF altlık:** çizim birimi varsayılan olarak metre alınır; AutoCAD'in metrik şablonu dosyaya
+  çoğu zaman "milimetre" yazar. Çizim metreyle akla yatmayan boyutta kalırsa (2 m'lik ya da 400
+  km'lik saha) dosyanın birimi, santimetre ya da milimetre seçilir. Seçilen birim bildirilir ve
+  panelden değiştirilebilir.
+
+### Kaldırıldı
+
+- **DXF dışa aktarma (TUREF / TM ya da yerel koordinatlı bütün proje):** yerini paratonerleri altlık
+  DXF'ine yazma aldı. Projede saklanan yerel DXF başlangıç noktası artık okunmaz.
+
 ## 1.10.0 (2026-11-24)
 
 Keşif 1.0.0 ilk kez bu sürümle yayımlanır.

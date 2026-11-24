@@ -455,6 +455,8 @@ button.sekme.aktif { color: var(--ink); border-bottom-color: var(--accent-ink); 
 .altlik-durum { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .altlik-satir { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 8px; font-size: 12.5px; }
 .altlik-satir select, .altlik-satir input[type="range"] { width: 100%; min-width: 0; }
+.altlik-renk-sec { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.altlik-renk-sec input[type="color"] { flex: none; width: 32px; height: 28px; padding: 2px; border: 1px solid var(--line); border-radius: var(--radius-xs); background: transparent; cursor: pointer; }
 .altlik-dugmeler { display: flex; gap: 8px; }
 .altlik-dugmeler > button:first-child { flex: 1; justify-content: center; }
 .altlik-ince { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -469,17 +471,10 @@ button.sekme.aktif { color: var(--ink); border-bottom-color: var(--accent-ink); 
 .altlik-katman-ad { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .altlik-sayi { color: var(--muted); font-variant-numeric: tabular-nums; }
 
-/* DXF dışa aktarma */
-.dxf-pencere { gap: 10px; }
-.form-dikey label.dxf-secenek { flex-direction: row; align-items: flex-start; gap: 10px; cursor: pointer; }
-.dxf-secenek > input { width: auto; margin-top: 2px; }
-.form-dikey .dxf-alt label { flex-direction: row; align-items: center; gap: 8px; }
-.dxf-alt select { width: auto; }
-.dxf-secenek > span { display: flex; flex-direction: column; gap: 2px; }
-.dxf-secenek .ipucu-kucuk { margin: 0; }
-.dxf-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 26px; }
-.dxf-alt .ipucu-kucuk { margin: 0; }
-.dxf-uyari { color: var(--warn); }
+/* AutoCAD ile çalışma (DXF) kılavuzu */
+.dxf-kilavuzu { gap: 10px; max-width: 620px; }
+.dxf-kilavuzu ol { margin: 4px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 1.45; }
+.dxf-kilavuzu-kural { margin: 0; padding: 8px 10px; border-left: 3px solid var(--accent-ink); background: var(--surface-2); border-radius: var(--radius-xs); font-size: 12.5px; }
 
 /* KML içe aktarma önizlemesi */
 .kml-aktar { display: flex; flex-direction: column; gap: 10px; }

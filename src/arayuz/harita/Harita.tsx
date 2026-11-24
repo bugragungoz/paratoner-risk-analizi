@@ -9,7 +9,7 @@ import { elipsoitMesafe, etkinDeltaT, poligonaDonustur, rpOku, type LatLng, type
 import type { Metinler } from '../../dil';
 import { useProje } from '../durum/ProjeSaglayici';
 import { useEtkilesim } from '../ortak/Etkilesim';
-import { etkinKatman, karoAdresi, katmanAtfi, katmanTanimi } from './katmanlar';
+import { etkinKatman, karoAdresi, katmanAtfi, katmanTanimi, koyuZeminMi } from './katmanlar';
 import { useMetinler } from '../ortak/useMetinler';
 import { googleTelif } from './servisler';
 import googleLogoUrl from '../gorseller/google-maps-logo.svg?url';
@@ -21,7 +21,7 @@ import type { AltlikAyari, DxfAltligi } from '../../core';
 /** Fare haritada gezerken yayılan olay; ayrıntı: imlecin koordinatı ya da harita dışındaysa null. */
 export const IMLEC_OLAYI = 'harita-imlec';
 
-export type CizimModu = 'yok' | 'paratoner' | 'yapi' | 'parsel' | 'olcum' | 'streetview' | 'altlik';
+export type CizimModu = 'yok' | 'paratoner' | 'yapi' | 'parsel' | 'olcum' | 'streetview';
 
 export interface HaritaGorunumu {
   /** Referans çemberi çizilecek h değerleri. */
@@ -49,13 +49,10 @@ export interface HaritaApi {
   altligaGit: () => void;
 }
 
-/** Haritada gösterilecek altlık ve iki nokta hizalamasında seçilen noktalar. */
+/** Haritada gösterilecek altlık. */
 export interface AltlikGorunumu {
   cozum: DxfAltligi;
   ayar: AltlikAyari;
-  /** Çizimde seçilen noktalar (camgöbeği) ve haritadaki karşılıkları (yeşil). */
-  cizimNoktalari: LatLng[];
-  haritaNoktalari: LatLng[];
 }
 
 interface Props {
@@ -69,8 +66,6 @@ interface Props {
   onParselPoligonu: (noktalar: LatLng[]) => void;
   onOlcum: (metre: number | null) => void;
   altlik: AltlikGorunumu | null;
-  /** Altlık hizalama modunda haritaya tıklandı. */
-  onAltlikNoktasi: (nokta: LatLng) => void;
   onStreetView: (konum: LatLng) => void;
   onOgeTikla: (tur: 'paratoner' | 'yapi', id: string) => void;
   onParatonerTasi: (id: string, konum: LatLng) => void;
@@ -193,7 +188,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
   const kapRef = useRef<HTMLDivElement>(null);
   const haritaRef = useRef<L.Map | null>(null);
   const karoRef = useRef<L.TileLayer | null>(null);
-  const katman = useRef<Record<'parsel' | 'yapi' | 'kapsama' | 'paratoner' | 'cizim' | 'olcum' | 'streetview' | 'kose' | 'altlikIsaret', L.LayerGroup> | null>(null);
+  const katman = useRef<Record<'parsel' | 'yapi' | 'kapsama' | 'paratoner' | 'cizim' | 'olcum' | 'streetview' | 'kose', L.LayerGroup> | null>(null);
   const altlikKatmani = useRef<AltlikKatmani | null>(null);
 
   // Olay işleyicilerinin her zaman güncel değerleri görmesi için (her çizimden sonra güncellenir).
@@ -235,7 +230,6 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
       olcum: L.layerGroup().addTo(harita),
       streetview: L.layerGroup().addTo(harita),
       kose: L.layerGroup().addTo(harita),
-      altlikIsaret: L.layerGroup().addTo(harita),
     };
     return () => {
       harita.remove();
@@ -391,7 +385,7 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
   }));
 
   // ---------------------------------------------------------------- DXF altlığı
-  const koyuZemin = ['google_uydu', 'google_hibrit', 'esri_uydu'].includes(etkinKatman(ayarlar.katman, haritaAnahtarlari));
+  const koyuZemin = koyuZeminMi(ayarlar.katman, haritaAnahtarlari);
   useEffect(() => {
     const harita = haritaRef.current;
     if (!harita) return;
@@ -411,25 +405,6 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
     },
     [],
   );
-
-  // Hizalamada seçilen noktalar: çizimdeki (camgöbeği) ve haritadaki karşılığı (yeşil), aralarında kesik çizgi.
-  const altlikCizimNoktalari = props.altlik?.cizimNoktalari;
-  const altlikHaritaNoktalari = props.altlik?.haritaNoktalari;
-  useEffect(() => {
-    const k = katman.current;
-    if (!k) return;
-    k.altlikIsaret.clearLayers();
-    const c = altlikCizimNoktalari ?? [];
-    const h = altlikHaritaNoktalari ?? [];
-    c.forEach((n, i) => {
-      L.circleMarker(ll(n), { radius: 6, color: '#06b6d4', weight: 2, fillOpacity: 0.3, interactive: false }).addTo(k.altlikIsaret);
-      const karsi = h[i];
-      if (karsi) {
-        L.circleMarker(ll(karsi), { radius: 6, color: '#22c55e', weight: 2, fillOpacity: 0.3, interactive: false }).addTo(k.altlikIsaret);
-        L.polyline([ll(n), ll(karsi)], { color: '#22c55e', weight: 2, dashArray: '5 4', interactive: false }).addTo(k.altlikIsaret);
-      }
-    });
-  }, [altlikCizimNoktalari, altlikHaritaNoktalari]);
 
   // ---------------------------------------------------------------- Çizim, ölçüm, tıklama, klavye
   useEffect(() => {
@@ -467,10 +442,9 @@ export const Harita = forwardRef<HaritaApi, Props>(function Harita(props, ref) {
     };
 
     function tikla(e: L.LeafletMouseEvent) {
-      const { mod, onParatonerKonumu, onStreetView, onAltlikNoktasi } = guncel.current.props;
+      const { mod, onParatonerKonumu, onStreetView } = guncel.current.props;
       const nokta = { lat: e.latlng.lat, lng: e.latlng.lng };
       if (mod === 'streetview') return onStreetView(nokta);
-      if (mod === 'altlik') return onAltlikNoktasi(nokta);
       if (mod === 'olcum') {
         olcumNoktalari.current = [...olcumNoktalari.current, nokta];
         return olcumuGoster();

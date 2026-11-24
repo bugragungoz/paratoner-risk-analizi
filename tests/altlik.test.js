@@ -1,4 +1,4 @@
-// Altlık hizalaması: TUREF yerleşimi, iki nokta, ölçek denetimi ve ince ayar.
+// Altlık hizalaması: TUREF yerleşimi, iki nokta (TUREF → ince ayar çevirisi), ince ayar ve çizim birimi.
 import { describe, test, expect } from 'vitest';
 import * as ck from '../src/core';
 
@@ -119,5 +119,57 @@ describe('Altlık ayarı proje dosyasında', () => {
     for (const bozuk of [{ ...altlik, hizalama: { tur: 'turef', dilim: 31 } }, { ...altlik, birim: 0 }, { ...altlik, hizalama: { ...altlik.hizalama, aci: 'x' } }]) {
       expect(ck.projeDosyasiOku(ck.projeDosyasiYaz({ ...p, altlik: bozuk }, 'test')).proje.altlik).toBeUndefined();
     }
+  });
+
+  test('tek renk ve konum kilidi saklanır; geçersiz renk ve kilit yok sayılır', async () => {
+    const { kanitSenaryosu } = await import('./veri/projeler');
+    const p = kanitSenaryosu();
+    const altlik = {
+      yol: null, ad: 'Plan.dxf', birim: 1,
+      hizalama: { tur: 'benzerlik', orijin: { lat: 39.9, lng: 32.8 }, aci: 0, olcek: 1, tx: 0, ty: 0 },
+      gizliKatmanlar: [], opaklik: 0.85, gorunur: true, renk: 'tek', tekRenk: '#00e5ff', kilitli: true,
+    };
+    const oku = (a) => ck.projeDosyasiOku(ck.projeDosyasiYaz({ ...p, altlik: a }, 'test')).proje.altlik;
+    expect(oku(altlik)).toEqual(altlik);
+    const geri = oku({ ...altlik, tekRenk: 'red', kilitli: 'evet' });
+    expect(geri.tekRenk).toBeUndefined();
+    expect(geri.kilitli).toBeUndefined();
+  });
+});
+
+describe('Çizim birimi tahmini', () => {
+  const sinir = (boyut) => ({ minX: 855, minY: 827, maxX: 855 + boyut, maxY: 827 + boyut * 0.7 });
+
+  test('varsayılan metre: AutoCAD şablonu "milimetre" yazsa da metreyle çizilmiş 400 m saha metre', () => {
+    expect(ck.birimTahmini(4, sinir(401))).toBe(1);
+    expect(ck.birimTahmini(0, sinir(401))).toBe(1);
+    expect(ck.birimTahmini(6, sinir(401))).toBe(1);
+  });
+
+  test('metreyle akla yatmayan boyutta dosyanın birimi, sonra santimetre ve milimetre denenir', () => {
+    // Milimetreyle çizilmiş 400 m saha: metre olsa 400 km olurdu.
+    expect(ck.birimTahmini(4, sinir(400_000))).toBe(0.001);
+    // Birimsiz, santimetreyle çizilmiş 300 m saha.
+    expect(ck.birimTahmini(0, sinir(30_000))).toBe(0.01);
+    // Birimsiz, milimetreyle çizilmiş 2 km saha: santimetre 20 km olurdu.
+    expect(ck.birimTahmini(0, sinir(2_000_000))).toBe(0.001);
+  });
+
+  test('dosya açıkça santimetre diyorsa ve akla yatıyorsa santimetre; yatmıyorsa metre', () => {
+    expect(ck.birimTahmini(5, sinir(5000))).toBe(0.01);
+    // "Santimetre" yazan ama metreyle çizilmiş 300 m saha: santimetreyle 3 m olurdu.
+    expect(ck.birimTahmini(5, sinir(300))).toBe(1);
+  });
+
+  test("TUREF / TM koordinatlı çizim boyutundan bağımsız olarak metre: 3,5 km'lik saha da yerine oturur", () => {
+    const genis = { minX: 480000, maxX: 483500, minY: 4418000, maxY: 4420000 };
+    for (const ins of [0, 4, 5, 6]) {
+      expect(ck.birimTahmini(ins, genis)).toBe(1);
+      expect(ck.turefOlabilir(genis, ck.birimTahmini(ins, genis))).toBe(true);
+    }
+  });
+
+  test('hiçbir birim uymazsa metre (TUREF koordinatları arasında kalan uzak bir öğe gibi)', () => {
+    expect(ck.birimTahmini(4, { minX: 0, minY: 0, maxX: 480_000, maxY: 4_400_000 })).toBe(1);
   });
 });

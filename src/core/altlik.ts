@@ -1,12 +1,13 @@
 // DXF altlığının haritaya yerleştirilmesi (hizalama). Altlık yalnızca görseldir; hesaba girmez.
 //
 //   - TUREF / TM: çizim ulusal koordinatlardaysa (vaziyet planı) doğrudan yerine oturur.
-//   - Benzerlik: koordinatsız çizim, yerel düzlemde (orijin noktasında Transverse Mercator) döndürülüp
-//     ötelenir; ölçek çizimin biriminden gelir. İki nokta hizalamasında ölçek isteğe bağlı olarak
-//     serbest bırakılabilir; çizim ölçeğinin noktalardan bulunan ölçekten sapması bildirilir.
+//   - Benzerlik: koordinatsız çizim harita ortasına konur ve kullanıcı ince ayarla, yerel düzlemde
+//     (orijin noktasında Transverse Mercator) taşıyıp döndürür; ölçek çizimin biriminden gelir ve
+//     değiştirilmez (1:1 planın ölçeğini görüntüye uydurmak yapı ölçülerini bozar).
 //
 // Çizim → yerel düzlem: X = ölçek·(cos a·x − sin a·y) + tx,  Y = ölçek·(sin a·x + cos a·y) + ty.
 
+import { birimMetresi } from './dxfOku';
 import { TUREF_DILIMLERI, turefDuzlemi, yerelDuzlem, type TurefDilimi, type XY } from './koordinat';
 import { tr as TR } from '../dil/tr';
 import type { LatLng } from './tipler';
@@ -29,6 +30,10 @@ export interface AltlikAyari {
   gorunur: boolean;
   /** 'katman': katman renkleri; 'tek': tek renk (uydu görüntüsü üzerinde daha okunaklı). */
   renk: 'katman' | 'tek';
+  /** Tek renk kipinde seçilen renk (#rrggbb); yoksa harita zeminine göre varsayılan renk. */
+  tekRenk?: string;
+  /** Konum kilitli: altlık yerine oturtulduktan sonra ince ayar ve birim değiştirilemez. */
+  kilitli?: boolean;
 }
 
 export interface Sinirlar {
@@ -45,6 +50,25 @@ export function turefOlabilir(s: Sinirlar, birim = 1): boolean {
 }
 
 const cizimMerkezi = (s: Sinirlar): XY => ({ x: (s.minX + s.maxX) / 2, y: (s.minY + s.maxY) / 2 });
+
+/** Altlık olarak açılan bir çizimin akla yatkın boyutu (en uzun kenar, metre): tek yapıdan tesise. */
+const AKLA_YATKIN_BOYUT = { en: 5, cok: 3000 } as const;
+
+/**
+ * Çizim birimi (bir çizim biriminin metre karşılığı). Vaziyet planları ve mimari projeler çoğunlukla
+ * metreyle 1:1 çizilir; AutoCAD'in metrik şablonu ise dosyaya çoğu zaman "milimetre" yazar. Bu yüzden
+ * varsayılan metredir; dosya açıkça santimetre ya da metre diyorsa önce o denenir. Çizim bu birimle
+ * akla yatmayan bir boyutta kalırsa (2 m'lik ya da 400 km'lik saha) dosyanın birimi, sonra santimetre
+ * ve milimetre denenir; hiçbiri uymazsa metre. TUREF / TM koordinatları her zaman metredir: çizim bu
+ * aralıktaysa boyutuna bakılmaz (birkaç km'lik saha ya da yanda unutulmuş bir öğe yerleşimi bozmasın).
+ */
+export function birimTahmini(insunits: number, s: Sinirlar): number {
+  if (turefOlabilir(s, 1)) return 1;
+  const boyut = Math.max(s.maxX - s.minX, s.maxY - s.minY);
+  const dosya = birimMetresi(insunits);
+  const adaylar = [...(dosya === 0.01 || dosya === 1 ? [dosya] : []), 1, ...(dosya ? [dosya] : []), 0.01, 0.001];
+  return adaylar.find((b) => boyut * b >= AKLA_YATKIN_BOYUT.en && boyut * b <= AKLA_YATKIN_BOYUT.cok) ?? 1;
+}
 
 /**
  * TUREF koordinatlı çizimin dilimi: aynı sağa/yukarı değer her dilimde ~250 km aralıklı başka bir

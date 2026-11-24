@@ -191,6 +191,8 @@ function altlikOku(x: unknown): AltlikAyari | null {
     opaklik: sayilar(x.opaklik) ? Math.min(1, Math.max(0.05, x.opaklik as number)) : 0.8,
     gorunur: x.gorunur !== false,
     renk: x.renk === 'tek' ? 'tek' : 'katman',
+    ...(typeof x.tekRenk === 'string' && /^#[0-9a-f]{6}$/i.test(x.tekRenk) ? { tekRenk: x.tekRenk } : {}),
+    ...(x.kilitli === true ? { kilitli: true } : {}),
   };
 }
 
@@ -227,14 +229,6 @@ export function projeyiDogrulaVeTamamla(ham: unknown, m: Metinler = TR): Proje {
   }
   const altlik = altlikOku(ham.altlik);
   if (altlik) proje.altlik = altlik;
-  // Yalnızca DXF çıktısı için: geçersizse projeyi açmayı engellemez, yok sayılır.
-  if (nesneMi(ham.yerel_orijin)) {
-    try {
-      proje.yerel_orijin = o.nokta(ham.yerel_orijin, d.yerelOrijin);
-    } catch {
-      // yok say
-    }
-  }
   return proje;
 }
 

@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-  birimMetresi,
+  birimTahmini,
   dxfCoz,
   DxfOkumaHatasi,
   ilkYerlesim,
@@ -37,6 +37,17 @@ const hataMetni = (e: unknown, m: Metinler) =>
     : e instanceof Error
       ? e.message
       : String(e);
+
+/** Altlık panelindeki çizim birimleri: bir birimin metre karşılığı ve adı. */
+export const altlikBirimleri = (m: Metinler): [number, string][] => [
+  [1, m.altlik.birimler.m],
+  [0.01, m.altlik.birimler.cm],
+  [0.001, m.altlik.birimler.mm],
+  [0.0254, m.altlik.birimler.inc],
+  [0.3048, m.altlik.birimler.ft],
+];
+
+export const birimAdi = (birim: number, m: Metinler) => altlikBirimleri(m).find(([b]) => b === birim)?.[1] ?? `${birim} m`;
 
 /**
  * `konum`: harita merkezi (koordinatsız çizim buraya konur) ve proje ortası (TUREF diliminin seçiminde
@@ -88,10 +99,10 @@ export function useAltlik(konum: () => { harita: LatLng | null; proje: LatLng | 
       let yeni: AltlikAyari;
       if (korunan) yeni = { ...korunan, yol: secilen.yol, ad: secilen.ad };
       else {
-        const birim = birimMetresi(cozum.birim) ?? 1;
+        const s = cozum.sinirlar!;
+        const birim = birimTahmini(cozum.birim, s);
         const k = konum();
         const merkez = k.harita ?? k.proje ?? { lat: 39, lng: 35 };
-        const s = cozum.sinirlar!;
         const turef = turefOlabilir(s, birim);
         yeni = {
           yol: secilen.yol,
@@ -112,6 +123,7 @@ export function useAltlik(konum: () => { harita: LatLng | null; proje: LatLng | 
         [
           m.altlik.eklendi(secilen.ad, cozum.katmanlar.length, cizgi),
           korunan ? '' : yeni.hizalama.tur === 'turef' ? m.altlik.turefYerlesti(yeni.hizalama.dilim) : m.altlik.elleYerlesti,
+          korunan ? '' : m.altlik.birimSecildi(birimAdi(yeni.birim, m)),
         ]
           .filter(Boolean)
           .join(' '),

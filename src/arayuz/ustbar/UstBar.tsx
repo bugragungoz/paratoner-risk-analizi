@@ -16,7 +16,7 @@ import { HesapDurumu } from './HesapDurumu';
 interface Props {
   dosya: DosyaIslemleri;
   kml: Pick<KmlIslemleri, 'iceAktar' | 'disaAktar'>;
-  dxfAc: () => void;
+  dxfYaz: () => void;
   altlikEkle: () => void;
   git: (lat: number, lng: number) => void;
   /** Haritanın merkezi (aramada yakındaki sonuçlar öne çıksın). */
@@ -25,13 +25,24 @@ interface Props {
   raporAc: () => void;
   ayarlarAc: (sekme?: AyarSekmesi) => void;
   kisayollarAc: () => void;
+  dxfKilavuzuAc: () => void;
   hakkindaAc: () => void;
 }
 
 const tarih = (ms: number, yerel: string) => new Date(ms).toLocaleString(yerel, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-/** Yardım: kısayollar, harita servisleri kılavuzu, kaynak kod, hakkında. */
-function YardimMenusu({ kisayollarAc, hakkindaAc, ayarlarAc }: { kisayollarAc: () => void; hakkindaAc: () => void; ayarlarAc: (sekme?: AyarSekmesi) => void }) {
+/** Yardım: kısayollar, harita servisleri ve AutoCAD (DXF) kılavuzları, kaynak kod, hakkında. */
+function YardimMenusu({
+  kisayollarAc,
+  dxfKilavuzuAc,
+  hakkindaAc,
+  ayarlarAc,
+}: {
+  kisayollarAc: () => void;
+  dxfKilavuzuAc: () => void;
+  hakkindaAc: () => void;
+  ayarlarAc: (sekme?: AyarSekmesi) => void;
+}) {
   const [acik, setAcik] = useState(false);
   const t = useMetinler().ust;
   const yap = (fn: () => void) => () => {
@@ -53,6 +64,9 @@ function YardimMenusu({ kisayollarAc, hakkindaAc, ayarlarAc }: { kisayollarAc: (
           <button role="menuitem" onClick={yap(() => ayarlarAc('harita'))}>
             {t.kilavuz}
           </button>
+          <button role="menuitem" onClick={yap(dxfKilavuzuAc)}>
+            {t.dxfKilavuzu}
+          </button>
           <hr />
           <button role="menuitem" onClick={yap(() => disBaglantiAc('https://github.com/bugragungoz/paratoner-risk-analizi'))}>
             {t.kaynak}
@@ -70,13 +84,13 @@ function YardimMenusu({ kisayollarAc, hakkindaAc, ayarlarAc }: { kisayollarAc: (
 function DosyaMenusu({
   dosya,
   kml,
-  dxfAc,
+  dxfYaz,
   altlikEkle,
   ayarlarAc,
 }: {
   dosya: DosyaIslemleri;
   kml: Pick<KmlIslemleri, 'iceAktar' | 'disaAktar'>;
-  dxfAc: () => void;
+  dxfYaz: () => void;
   altlikEkle: () => void;
   ayarlarAc: (sekme?: AyarSekmesi) => void;
 }) {
@@ -114,7 +128,7 @@ function DosyaMenusu({
           <button role="menuitem" onClick={yap(() => kml.disaAktar())}>
             {m.kml.disaAktar}
           </button>
-          <button role="menuitem" onClick={yap(dxfAc)}>
+          <button role="menuitem" onClick={yap(dxfYaz)}>
             {m.dxf.menu}
           </button>
           <button role="menuitem" onClick={yap(altlikEkle)}>
@@ -157,7 +171,7 @@ export function UstBar(p: Props) {
         <button onClick={() => p.dosya.kaydet()} title={dosyaYolu ? t.kaydetYol(dosyaYolu) : t.kaydetIpucu}>
           <Save size={14} /> {t.kaydet}
         </button>
-        <DosyaMenusu dosya={p.dosya} kml={p.kml} dxfAc={p.dxfAc} altlikEkle={p.altlikEkle} ayarlarAc={p.ayarlarAc} />
+        <DosyaMenusu dosya={p.dosya} kml={p.kml} dxfYaz={p.dxfYaz} altlikEkle={p.altlikEkle} ayarlarAc={p.ayarlarAc} />
         <span className="ayirac" />
         <HesapDurumu />
         <button onClick={geriAl} disabled={!geriAlinabilir} title={t.geriAl} className="ikon-kare">
@@ -200,7 +214,7 @@ export function UstBar(p: Props) {
         <button className="ikon-kare" onClick={() => ayarGuncelle({ tema: etkinTema(ayarlar.tema) === 'dark' ? 'light' : 'dark' })} title={t.tema}>
           {etkinTema(ayarlar.tema) === 'dark' ? <Moon size={15} /> : <Sun size={15} />}
         </button>
-        <YardimMenusu kisayollarAc={p.kisayollarAc} hakkindaAc={p.hakkindaAc} ayarlarAc={p.ayarlarAc} />
+        <YardimMenusu kisayollarAc={p.kisayollarAc} dxfKilavuzuAc={p.dxfKilavuzuAc} hakkindaAc={p.hakkindaAc} ayarlarAc={p.ayarlarAc} />
       </div>
     </header>
   );

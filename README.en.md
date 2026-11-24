@@ -40,10 +40,10 @@ installed outside Google Play, so the phone asks for permission to install unkno
   map figure.
 - **Maps.** Google and Esri satellite imagery with the user's own key, OpenStreetMap without one;
   official services only. A site plan opens as a DXF underlay; with TUREF coordinates it falls
-  into place, otherwise it is aligned with two points.
-- **Export and import.** Google Earth (KML / KMZ) and AutoCAD DXF (TUREF / TM or local
-  coordinates), with results and protection circles on separate layers. Structures and air
-  terminals are read from KML.
+  into place, otherwise it is moved and rotated onto the satellite image.
+- **Export and import.** Google Earth (KML / KMZ); structures and air terminals are read from KML.
+  Air terminals are written into the underlay DXF in the drawing's own coordinates and pasted into
+  the original drawing in AutoCAD.
 - **Field app.** The Android app Keşif records ground levels and air terminal points on site with
   their position accuracy; a survey is shared as KML and imported into the desktop app.
 
@@ -67,6 +67,24 @@ With missing or non-standard input the app does not calculate and says so.
 | Required efficiency | E = 1 − Nc / Nd |
 | Protection level | E > 0.98: I with additional measures · > 0.95: I · > 0.90: II · > 0.80: III · otherwise: IV |
 | Protection radius | Rp is read from the manufacturer table (ΔT = 15/30/45/60 µs) with linear interpolation between rows. Cross-check: √(2rh − h² + ΔL(2r + ΔL)), r = 20/30/45/60 m |
+
+</details>
+
+<details>
+<summary><b>Working with AutoCAD (DWG)</b></summary>
+
+The program does not read DWG; the drawing comes in as DXF and the air terminals go back through the
+same DXF. Use AutoCAD's **Paste to Original Coordinates** (`PASTEORIG`) in both directions; a plain
+Ctrl+V shifts the coordinates.
+
+1. In the DWG, copy the part you need, paste it with `PASTEORIG` into a new drawing set to the same
+   units as the original, and save it as AutoCAD 2018 DXF.
+2. In the program, open it with File › Add DXF underlay (the unit is taken as metre), fit it onto the
+   satellite image with fine adjustment and lock its position. Draw the structures and air terminals
+   over the underlay.
+3. File › Write air terminals to the underlay DXF: a copy with the air terminals on the PT_PARATONER
+   layer is saved next to the original; nothing in the plan changes.
+4. In AutoCAD, copy this layer and paste it into the original DWG with `PASTEORIG`.
 
 </details>
 

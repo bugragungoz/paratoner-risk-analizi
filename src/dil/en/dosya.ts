@@ -45,7 +45,6 @@ export const dosyaEn: Metinler['dosya'] = {
   cihaz: 'Device information',
   raporNumarasi: 'Report number',
   parselSiniri: 'Parcel boundary',
-  yerelOrijin: 'Local origin',
   cokBuyuk: 'The file is too large for a project file.',
   jsonDegil: 'The file could not be read: it is not valid JSON.',
   dosyaSurumu: 'File version',

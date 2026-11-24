@@ -47,6 +47,7 @@ export const arayuzEn: ArayuzMetinleri = {
     yardim: 'Help',
     kisayollar: 'Keyboard shortcuts',
     kilavuz: 'Map services setup guide',
+    dxfKilavuzu: 'Working with AutoCAD (DXF)',
     kaynak: 'Source code and issue reports',
     hakkinda: 'About',
     digerDosya: 'More file actions',
@@ -507,6 +508,33 @@ export const arayuzEn: ArayuzMetinleri = {
     haritaNotu:
       'Map data and imagery belong to their providers (Google, Esri and data providers, © OpenStreetMap contributors); their attributions are shown on the map and in the report. The Google Maps logo is a trademark of Google. The full list of components and their licences is in NOTICE.md in the source repository.',
     gelistirme: 'Coded with Opus 5.5, developed with Fable 5.2.',
+  },
+  dxfKilavuzu: {
+    baslik: 'Working with AutoCAD (DXF)',
+    giris: 'The program does not read DWG; the drawing comes in from AutoCAD as DXF and the air terminals go back through the same DXF.',
+    bolumler: [
+      {
+        baslik: '1. Bringing the AutoCAD drawing into the program',
+        adimlar: [
+          'In the DWG, select the part you need (buildings, existing air terminals) and copy it with Ctrl+C.',
+          'Open a new drawing, set its units (UNITS › Insertion scale) to match the original DWG, then paste with right-click › Clipboard › Paste to Original Coordinates (PASTEORIG).',
+          'Save As › AutoCAD 2018 DXF or an older DXF version.',
+          'In the program, move the map to the site and open the file with File menu › Add DXF underlay. The drawing unit is taken as metre; if it differs, change it in the underlay panel.',
+          'Move and rotate it onto the buildings in the satellite image with fine adjustment, then fix it with Lock position.',
+          'Draw the buildings and air terminals over the underlay. Place the air terminals of the drawing at their positions to see the protection; move them if needed.',
+        ],
+      },
+      {
+        baslik: '2. Returning the air terminals to the AutoCAD drawing',
+        adimlar: [
+          "File menu › Write air terminals to the underlay DXF: the air terminals (symbol, name, mast) are added to the PT_PARATONER layer in the underlay drawing's own coordinates. The file is saved next to the original with a '-paratoner' suffix; nothing in the plan changes.",
+          'Open this file in AutoCAD, select the items on the PT_PARATONER layer and copy them with Ctrl+C.',
+          'In the original DWG, paste with right-click › Clipboard › Paste to Original Coordinates (PASTEORIG): the air terminals fall into place.',
+        ],
+      },
+    ],
+    kural:
+      'Rule: use Paste to Original Coordinates in both directions and keep both drawings in the same units. A plain Ctrl+V asks for an insertion point and shifts the coordinates, and a unit difference makes AutoCAD rescale on paste; the returned air terminals would then land in the wrong place.',
   },
   kisayollar: {
     baslik: 'Keyboard shortcuts',

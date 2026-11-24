@@ -115,11 +115,6 @@ export interface Proje {
    */
   deltaT_onay_gerekli?: boolean;
   h_esikleri_varsayilan: number[];
-  /**
-   * DXF yerel koordinatlarının başlangıç noktası (0, 0). İlk yerel DXF çıktısında belirlenir ve
-   * saklanır; böylece sonradan öğe eklense de yeni çıktı eskisiyle üst üste gelir. Hesabı etkilemez.
-   */
-  yerel_orijin?: LatLng | null;
   /** DXF altlığı (yalnızca görsel; hesaba girmez). Çizimin kendisi değil, yolu ve hizalaması saklanır. */
   altlik?: AltlikAyari | null;
   parsel_siniri: LatLng[] | null;

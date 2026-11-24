@@ -12,7 +12,7 @@ export * from './kml';
 export * from './kmlOku';
 export * from './sahaKml';
 export * from './dxf';
-export * from './dxfYaz';
+export * from './dxfEkle';
 export * from './dxfOku';
 export * from './altlik';
 export * from './dogrulama';

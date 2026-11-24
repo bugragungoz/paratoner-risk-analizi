@@ -7,6 +7,9 @@ import L from 'leaflet';
 import { altlikDonusturucu, type AltlikAyari, type DxfAltligi, type LatLng } from '../../core';
 import { aciRengi } from './aci';
 
+/** Tek renk kipinde renk seçilmemişse: uydu görüntüsünde sarı, açık haritada koyu pembe. */
+export const varsayilanTekRenk = (koyuZemin: boolean) => (koyuZemin ? '#ffd400' : '#d81b60');
+
 interface HazirParca {
   katman: number;
   kapali: boolean;
@@ -63,7 +66,7 @@ export class AltlikKatmani extends L.Layer {
     }
     const gizli = new Set(ayar.gizliKatmanlar);
     this.gorunurKatman = cozum.katmanlar.map((k) => !gizli.has(k.ad));
-    const tek = koyuZemin ? '#ffd400' : '#d81b60';
+    const tek = ayar.tekRenk ?? varsayilanTekRenk(koyuZemin);
     this.renkler = cozum.katmanlar.map((k) => (ayar.renk === 'tek' ? tek : aciRengi(k.renk, koyuZemin)));
     this.opaklik = ayar.opaklik;
     this.cizimIste();

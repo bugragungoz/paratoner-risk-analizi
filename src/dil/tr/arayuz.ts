@@ -44,6 +44,7 @@ export const arayuzTr = {
     yardim: 'Yardım',
     kisayollar: 'Klavye kısayolları',
     kilavuz: 'Harita servisleri kurulum kılavuzu',
+    dxfKilavuzu: 'AutoCAD ile çalışma (DXF)',
     kaynak: 'Kaynak kod ve sorun bildirimi',
     hakkinda: 'Hakkında',
     digerDosya: 'Diğer dosya işlemleri',
@@ -509,6 +510,33 @@ export const arayuzTr = {
     haritaNotu:
       "Harita verileri ve görüntüleri sağlayıcılarına aittir (Google, Esri ve veri sağlayıcıları, © OpenStreetMap katkıda bulunanlar); haritada ve raporda atıfları gösterilir. Google Maps logosu Google'ın markasıdır. Bileşenlerin tam listesi ve lisansları kaynak depodaki NOTICE.md dosyasındadır.",
     gelistirme: 'Opus 5.5 ile kodlandı, Fable 5.2 ile geliştirildi.',
+  },
+  dxfKilavuzu: {
+    baslik: 'AutoCAD ile çalışma (DXF)',
+    giris: 'Program DWG okumaz; çizim AutoCAD üzerinden DXF olarak alınır ve paratonerler aynı DXF ile geri verilir.',
+    bolumler: [
+      {
+        baslik: '1. AutoCAD çizimini programa alma',
+        adimlar: [
+          "DWG'de aktaracağınız kısmı (yapılar, mevcut paratonerler) seçip Ctrl+C ile kopyalayın.",
+          'Yeni bir çizim açın; birimini (UNITS › Insertion scale) asıl DWG ile aynı yapın, sonra sağ tık › Clipboard › Paste to Original Coordinates (PASTEORIG) ile yapıştırın.',
+          'Save As › AutoCAD 2018 DXF ya da daha eski bir DXF sürümüyle kaydedin.',
+          "Programda haritayı sahaya getirip Dosya menüsü › DXF altlık ekle ile açın. Çizim birimi metre alınır; farklıysa altlık panelinden değiştirin.",
+          'Uydu görüntüsünde ince ayarla taşıyıp döndürerek yapıların üstüne oturtun ve Konumu kilitle ile sabitleyin.',
+          'Yapıları ve paratonerleri altlığın üstüne çizin. Çizimdeki paratonerleri yerlerine koyup korumayı görün; gerekirse taşıyın.',
+        ],
+      },
+      {
+        baslik: '2. Paratonerleri AutoCAD çizimine geri verme',
+        adimlar: [
+          "Dosya menüsü › Paratonerleri altlık DXF'ine yaz: paratonerler (sembol, ad, mast) altlık çiziminin kendi koordinatlarında PT_PARATONER katmanına eklenir. Dosya asıl çizimin yanına '-paratoner' ekiyle kaydedilir; plandaki hiçbir şey değişmez.",
+          "Bu dosyayı AutoCAD'de açın, PT_PARATONER katmanındakileri seçip Ctrl+C ile kopyalayın.",
+          "Asıl DWG'de sağ tık › Clipboard › Paste to Original Coordinates (PASTEORIG) ile yapıştırın: paratonerler yerine oturur.",
+        ],
+      },
+    ],
+    kural:
+      "Kural: iki yönde de Paste to Original Coordinates kullanın ve iki çizimin birimi aynı olsun. Düz Ctrl+V yapıştırma noktası sorar ve koordinatları kaydırır, birim farkı da AutoCAD'in yapıştırırken ölçeklemesine yol açar; o zaman geri verilen paratonerler yanlış yere düşer.",
   },
   kisayollar: {
     baslik: 'Klavye kısayolları',

@@ -51,6 +51,12 @@ export function etkinKatman(ad: string, anahtarlar: AnahtarDurumu): KatmanAdi {
   return katmanKullanilabilir(k, anahtarlar) ? k : 'osm';
 }
 
+/** Etkin katman uydu görüntüsü mü (altlık ve işaretler koyu zemine göre renklenir)? */
+export function koyuZeminMi(ad: string, anahtarlar: AnahtarDurumu): boolean {
+  const k = etkinKatman(ad, anahtarlar);
+  return k === 'google_uydu' || k === 'google_hibrit' || k === 'esri_uydu';
+}
+
 export function karoAdresi(ad: KatmanAdi): string {
   if (tauriMi()) return `http://karo.localhost/${ad}/{z}/{x}/{y}`;
   return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';

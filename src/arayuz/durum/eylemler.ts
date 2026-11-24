@@ -21,7 +21,6 @@ export const cihazAyarla = (cihaz: string): Donusum => (p) => ({ ...p, cihaz });
 export const raporNoAyarla = (rapor_no: string): Donusum => (p) => ({ ...p, rapor_no });
 export const revizyonlarAyarla = (revizyonlar: Revizyon[]): Donusum => (p) => ({ ...p, revizyonlar });
 export const parselAyarla = (parsel_siniri: LatLng[] | null): Donusum => (p) => ({ ...p, parsel_siniri });
-export const yerelOrijinAyarla = (yerel_orijin: LatLng): Donusum => (p) => ({ ...p, yerel_orijin });
 /** Altlık ekler, değiştirir (kısmi) ya da kaldırır (null). */
 export const altlikAyarla = (altlik: AltlikAyari | null): Donusum => (p) => ({ ...p, altlik });
 export const altlikGuncelle = (d: Partial<AltlikAyari>): Donusum => (p) => (p.altlik ? { ...p, altlik: { ...p.altlik, ...d } } : p);
