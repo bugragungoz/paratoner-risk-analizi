@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "default",
+  "description": "Keşif uygulamasının izinleri: Google Haritalar ve kaynak kod bağlantısı, panodan okuma ve dosya paylaşma (konum: konum.json).",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://www.google.com/maps/*" }, { "url": "https://github.com/bugragungoz/paratoner-risk-analizi*" }]
+    },
+    "clipboard-manager:allow-read-text",
+    "paylas:default"
+  ],
+  "platforms": ["android", "windows"]
+}

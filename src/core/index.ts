@@ -10,6 +10,7 @@ export * from './geometri';
 export * from './koordinat';
 export * from './kml';
 export * from './kmlOku';
+export * from './sahaKml';
 export * from './dxf';
 export * from './dxfYaz';
 export * from './dxfOku';

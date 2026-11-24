@@ -77,6 +77,7 @@ export const en: Metinler = {
     notVar: 'Already in the project',
     notDogruluk: (m) => `Position accuracy ±${m} m`,
     notDelik: 'Inner boundaries (holes) are not imported',
+    sahaNotu: (not) => `Site note: ${not}`,
     notParsel: 'Replaces the current plot boundary',
     notParselFazla: 'Only the first plot boundary is imported',
     hataMast: 'Enter the mast height',

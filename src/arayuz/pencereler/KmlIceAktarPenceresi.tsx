@@ -34,7 +34,7 @@ export function KmlIceAktarPenceresi({ belge, dosyaAdi, kapat, eklendi }: Props)
   const { proje, guncelle } = useProje();
   const { bildir } = useEtkilesim();
   const m = useMetinler();
-  const [oneri, setOneri] = useState<AktarimOnerisi>(() => aktarimOnerisi(belge, proje));
+  const [oneri, setOneri] = useState<AktarimOnerisi>(() => aktarimOnerisi(belge, proje, m));
 
   const satirGuncelle = (sira: number, degisiklik: Partial<AktarimSatiri>) =>
     setOneri((o) => ({ ...o, satirlar: o.satirlar.map((s) => (s.oge.sira === sira ? { ...s, ...degisiklik } : s)) }));
@@ -158,6 +158,7 @@ export function KmlIceAktarPenceresi({ belge, dosyaAdi, kapat, eklendi }: Props)
                         <span key={n}>{notEtiketi[n]}</span>
                       ))}
                       {dogruluk && <span>{m.kml.notDogruluk(dogruluk)}</span>}
+                      {s.oge.veri.pt_not && <span className="kml-saha-notu">{m.kml.sahaNotu(s.oge.veri.pt_not)}</span>}
                     </td>
                   </tr>
                 );

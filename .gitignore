@@ -4,6 +4,11 @@ dist
 
 src-tauri/target/
 src-tauri/gen/
+
+# Saha uygulaması (Android): derleme çıktıları; gen/android projesi depoda tutulur
+saha/dist/
+saha/src-tauri/target/
+saha/src-tauri/gen/schemas/
 .vite/
 
 # Arşivlenmiş eski kurulum dosyaları

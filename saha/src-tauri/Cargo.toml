@@ -1,0 +1,33 @@
+[package]
+name = "paratoner-saha"
+version = "1.0.0"
+description = "Keşif — paratoner saha keşfinde kot seviyeleri ve paratoner konumları (Android)"
+authors = ["Buğra Güngöz"]
+license = "GPL-3.0-or-later"
+repository = "https://github.com/bugragungoz/paratoner-risk-analizi"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "saha_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.3", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri-plugin-opener = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-paylas = { path = "paylas" }
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-geolocation = "2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

@@ -48,6 +48,21 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; s
   - İngilizce terimler NF C 17-102'nin İngilizce baskısını izler (ESE air terminal, protection
     level, protection radius Rp, ΔT ESE efficiency).
 
+- **Keşif (Android saha uygulaması):** saha keşfi için telefon uygulaması (`saha/` klasörü). Hesap
+  yapmaz; keşifte kot seviyelerini (zeminden yükseklik) ve paratoner noktalarını tutar.
+  - Konum tek dokunuşla arka planda alınır (pencere açılmaz, başka ekrana geçince de sürer) ve
+    doğruluğuyla (±m) kaydedilir. Hızlı kipte ilk yeterli okumada (±15 m), hassas kipte birkaç
+    saniyelik ortalamayla. "Paratoner ekle" konumu da hemen alabilir. İnternet varsa konum ağ
+    desteğiyle daha hızlı bulunur, yoksa yalnızca GPS kullanılır.
+  - Koordinat Google Haritalar'dan kopyalanıp yapıştırılabilir; nokta Google Haritalar'da açılıp
+    kontrol edilebilir. Her noktaya düşünülen mast yüksekliği ve not girilir.
+  - Keşif KML olarak paylaşılır (WhatsApp, e-posta, Drive) ya da telefona kaydedilir; dosya adı
+    ASCII'dir ("Kesif-22-11-2026.kml"). Masaüstünde "KML / KMZ içe aktar" ile açılır.
+  - İlk açılışta dil ve konum izni; Ayarlar'da dil, tema, konum alma kipi, yeni nokta ad ön eki ve
+    varsayılan mast yüksekliği. Keşif verisi yalnızca telefonda tutulur. Türkçe ve İngilizce.
+- **KML içe aktarma:** saha dosyasındaki bütün kot seviyeleri (üzerinde paratoner olmayanlar da)
+  projeye eklenir; saha notu önizlemede görünür.
+
 ### Düzeltildi
 
 - **Hesap:** mesafe, alan ve kapsama elipsoit (GRS80) üzerinde, yapının yerel Transverse Mercator

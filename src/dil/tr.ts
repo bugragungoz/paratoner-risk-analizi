@@ -79,6 +79,7 @@ export const tr = {
     notVar: 'Projede zaten var',
     notDogruluk: (m: string) => `Konum doğruluğu ±${m} m`,
     notDelik: 'İç sınırlar (delikler) alınmaz',
+    sahaNotu: (not: string) => `Saha notu: ${not}`,
     notParsel: 'Mevcut parsel sınırının yerine geçer',
     notParselFazla: 'Yalnızca ilk parsel sınırı alınır',
     hataMast: 'Mast yüksekliğini girin',

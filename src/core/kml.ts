@@ -5,13 +5,14 @@
 // öğe gönderebilir. Sayılar ondalık noktayla yazılır; koordinatlar WGS84 boylam,enlem'dir ve
 // yükseklik yazılmaz (öğeler zemine oturur; kot ve yükseklik aşağıdaki alanlarla taşınır).
 //
-//   Belge      pt_surum (şema sürümü), pt_uygulama
+//   Belge      pt_surum (şema sürümü), pt_uygulama, pt_kotlar (saha: bütün kotlar, JSON [{ad, m}])
 //   Ortak      pt_tur = yapi | paratoner | parsel | rp_daire,  pt_kimlik
 //   Yapı       pt_H_m (kot seviyesinden çatıya), pt_kot (kot adı), pt_kot_m (kotun referanstan yüksekliği),
 //              pt_C1 … pt_C5; yalnızca dışa aktarmada sonuç: pt_seviye, pt_sonuc, pt_kapsama
 //   Paratoner  pt_mast_m, pt_kot ve pt_kot_m (zemindeyse), pt_yapi (çatıdaysa yapının pt_kimlik'i),
 //              pt_deltaT (paratonere özel ΔT, µs), pt_aktif (1/0)
-//   Saha       pt_dogruluk_m (konum doğruluğu, m; içe aktarmada gösterilir)
+//   Saha       pt_dogruluk_m (konum doğruluğu, m; içe aktarmada gösterilir), pt_konum_kaynagi (gps | elle),
+//              pt_zaman (ISO), pt_not (içe aktarma önizlemesinde gösterilir); bkz. sahaKml.ts
 //   Rp dairesi (yalnızca dışa aktarma) pt_paratoner, pt_yapi, pt_rp_m, pt_seviye, pt_h_m, pt_deltaT
 
 import type { Metinler } from '../dil';
@@ -22,19 +23,13 @@ import { DAIRE_ADIMI } from './geometri';
 import { elipsoitMesafe, yerelDuzlem } from './koordinat';
 import { paratonerTepeKotu } from './kot';
 import type { LatLng, Paratoner, Proje, Yapi } from './tipler';
+import { aciklama, KML_SEMA_SURUMU, kmlRengi, veri, xml, type KmlAlanlari } from './kmlTemel';
 
-export const KML_SEMA_SURUMU = 1;
+export { KML_SEMA_SURUMU, kmlSayi } from './kmlTemel';
 
 export type KmlTuru = 'yapi' | 'paratoner' | 'parsel' | 'rp_daire';
 
-type Alanlar = Record<string, string | number | null | undefined>;
-
-const xml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-/** Sayıyı KML'e yazılacak biçimde (ondalık nokta, en fazla 6 basamak) verir. */
-export function kmlSayi(x: number): string {
-  return String(Number(x.toFixed(6)));
-}
+type Alanlar = KmlAlanlari;
 
 const koordinat = (n: LatLng) => `${n.lng.toFixed(8)},${n.lat.toFixed(8)},0`;
 
@@ -42,22 +37,6 @@ function halka(poligon: LatLng[]): string {
   const k = poligon.map(koordinat);
   if (k.length && k[0] !== k[k.length - 1]) k.push(k[0]!);
   return k.join(' ');
-}
-
-function veri(alanlar: Alanlar): string {
-  const satirlar = Object.entries(alanlar)
-    .filter(([, v]) => v !== null && v !== undefined && v !== '')
-    .map(([k, v]) => `<Data name="${k}"><value>${xml(typeof v === 'number' ? kmlSayi(v) : String(v))}</value></Data>`);
-  return satirlar.length ? `<ExtendedData>${satirlar.join('')}</ExtendedData>` : '';
-}
-
-/** Google Earth açıklamayı HTML olarak gösterir: satırlar <br> ile ayrılır, metin önce HTML'e göre kaçırılır. */
-const aciklama = (satirlar: string[]) => `<description>${xml(satirlar.map(xml).join('<br>'))}</description>`;
-
-/** '#rrggbb' → KML rengi 'aabbggrr'. */
-function kmlRengi(hex: string, saydamlik = 'ff'): string {
-  const h = hex.replace('#', '');
-  return `${saydamlik}${h.slice(4, 6)}${h.slice(2, 4)}${h.slice(0, 2)}`.toLowerCase();
 }
 
 const PARATONER_RENGI = '#f59e0b';

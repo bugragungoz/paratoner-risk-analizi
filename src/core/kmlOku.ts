@@ -8,6 +8,7 @@
 import type { Metinler } from '../dil';
 import { tr as TR } from '../dil/tr';
 import { yeniKotSeviyesi, yeniParatoner, yeniYapi } from './model';
+import { kotListesiOku } from './sahaKml';
 import type { KotSeviyesi, LatLng, Paratoner, Proje, Yapi } from './tipler';
 
 export type KmlGeometrisi =
@@ -217,6 +218,8 @@ export interface AktarimOnerisi {
   tabanlar: TabanSecenegi[];
   /** Listelenmeyen öğe sayısı: çizgiler ve (kendi dışa aktarımımızdaki) koruma daireleri. */
   atlanan: number;
+  /** Belgedeki kot listesi (saha uygulaması, pt_kotlar): öğe yerleştirilmemiş kotlar da eklenir. Taban anahtarları. */
+  belgeKotlari: string[];
 }
 
 const sayiOku = (v: string | undefined): number | null => {
@@ -260,7 +263,8 @@ export function aktarimOnerisi(belge: KmlBelgesi, proje: Proje, m: Metinler = TR
     return yeni.anahtar;
   };
 
-  // Önce dosyadaki kotlar (yapılar ve zemindeki paratonerler), sonra varsayılan.
+  // Önce belgenin kot listesi (saha uygulaması), sonra öğelerin kotları, sonra varsayılan.
+  const belgeKotlari = kotListesiOku(belge.veri.pt_kotlar).flatMap((k) => kotBul(k.ad, k.m) ?? []);
   const ogeKotu = ogeler.map((o) => kotBul(o.veri.pt_kot, sayiOku(o.veri.pt_kot_m)));
   if (!tabanlar.some((t) => t.tur !== 'cati')) tabanlar.push({ anahtar: kotAnahtari(m.kml.varsayilanKot, 0), tur: 'yeniKot', isim: m.kml.varsayilanKot, yukseklik: 0 });
   const varsayilanKot = tabanlar.find((t) => t.tur !== 'cati')!.anahtar;
@@ -299,7 +303,7 @@ export function aktarimOnerisi(belge: KmlBelgesi, proje: Proje, m: Metinler = TR
       notlar,
     };
   });
-  return { satirlar, tabanlar, atlanan: belge.ogeler.length - ogeler.length };
+  return { satirlar, tabanlar, atlanan: belge.ogeler.length - ogeler.length, belgeKotlari: [...new Set(belgeKotlari)] };
 }
 
 export type SatirHatasi = 'MAST' | 'GEOMETRI' | 'TABAN' | 'CATI' | null;
@@ -336,7 +340,7 @@ export interface AktarimSonucu {
 const C_ALANLARI = ['C1', 'C2', 'C3', 'C4', 'C5'] as const;
 
 /** Seçili satırları projeye ekler. Hatalı satır varsa hiçbir şey eklenmez (çağıran önce satirHatasi'na bakar). */
-export function projeyeAktar(proje: Proje, oneri: Pick<AktarimOnerisi, 'satirlar' | 'tabanlar'>): AktarimSonucu {
+export function projeyeAktar(proje: Proje, oneri: Pick<AktarimOnerisi, 'satirlar' | 'tabanlar'> & Partial<Pick<AktarimOnerisi, 'belgeKotlari'>>): AktarimSonucu {
   const secili = oneri.satirlar.filter((s) => s.al && s.tur !== 'alma');
   if (secili.some((s) => satirHatasi(s, oneri, proje) !== null)) throw new Error('İçe aktarılacak satırlarda eksik bilgi var.');
 
@@ -354,6 +358,9 @@ export function projeyeAktar(proje: Proje, oneri: Pick<AktarimOnerisi, 'satirlar
     kotIdleri.set(anahtar, k.id);
     return k.id;
   };
+
+  // Belgenin kot listesindeki kotlar önce ve belgedeki sırayla; üzerine öğe konmamış olsa da eklenir (saha keşfi).
+  for (const anahtar of oneri.belgeKotlari ?? []) kotId(anahtar);
 
   // Yapılar önce: çatıdaki paratonerler dosyadaki yapı kimliğiyle bağlanır.
   const yapilar: Yapi[] = [];

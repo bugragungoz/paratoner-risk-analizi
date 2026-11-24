@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Bugra tasarım sistemi: koyu zemin (açılışta beyaz parlama olmasın; ön yüz de telefonun temasını izler). -->
+    <style name="Theme.paratoner_saha" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/bugra_zemin</item>
+        <item name="colorPrimary">@color/bugra_yesil</item>
+        <item name="colorSecondary">@color/bugra_yesil</item>
+    </style>
+</resources>
