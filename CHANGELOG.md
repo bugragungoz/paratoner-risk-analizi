@@ -63,6 +63,13 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; s
 - **KML içe aktarma:** saha dosyasındaki bütün kot seviyeleri (üzerinde paratoner olmayanlar da)
   projeye eklenir; saha notu önizlemede görünür.
 
+### Değişti
+
+- **Kurulum:** Windows kurulum paketi MSI oldu (önceden NSIS kurulum dosyası). Program bilgisayarın
+  bütün kullanıcıları için kurulur; sonraki sürümler eskisinin üzerine kurulur. 1.9 kuruluysa önce
+  Windows Ayarlar › Uygulamalar'dan kaldırılmalıdır; projeler, ayarlar ve harita anahtarları
+  silinmez, `.ptproj` dosyalarının programla açılması kurulumda düzeltilir.
+
 ### Düzeltildi
 
 - **Hesap:** mesafe, alan ve kapsama elipsoit (GRS80) üzerinde, yapının yerel Transverse Mercator

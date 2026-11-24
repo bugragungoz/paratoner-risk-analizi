@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  1.9 sürümleri NSIS kurulum dosyasıyla kullanıcıya kuruluyordu. NSIS kaldırıcısı
+  HKCU\Software\Classes\.ptproj anahtarını boş bir değerle geride bırakıyor; bu anahtar
+  makineye kurulan MSI'nın .ptproj ilişkilendirmesini gölgeler ve proje dosyaları çift
+  tıklamayla açılmaz. Kurulumda bu kalıntı silinir.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <DirectoryRef Id="INSTALLDIR">
+      <Component Id="NsisKalintisiTemizle" Guid="*">
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\.ptproj" Action="removeOnInstall" />
+        <RegistryValue Root="HKCU" Key="Software\Bugra Gungoz\Paratoner Risk Analizi" Name="NsisKalintisiTemizlendi" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

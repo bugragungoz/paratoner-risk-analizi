@@ -67,7 +67,7 @@ Lisansın 7. maddesinin (b), (c) ve (e) bentleri uyarınca:
 ## 5. Üçüncü taraflar
 
 - **Bağlantı yoktur.** Bu bağımsız bir projedir. AFNOR, herhangi bir standart kuruluşu, paratoner
-  üreticisi ya da satıcısı, Google, Esri ya da OpenStreetMap ile bağlantısı yoktur ve onlar
+  üreticisi ya da satıcısı, Google, Esri, Autodesk ya da OpenStreetMap ile bağlantısı yoktur ve onlar
   tarafından desteklenmemekte ya da onaylanmamaktadır. Belgelerde adı geçen firma ve ürün adları
   yalnızca karşılaştırma kaynağını belirtmek içindir; markalar sahiplerine aittir.
 - **Harita servisleri.** Program harita anahtarı içermez. Google Maps Platform ve Esri servisleri
@@ -108,6 +108,6 @@ does not contain the text of NF C 17-102 and does not replace it. By using the p
 these terms.
 
 **No affiliation.** This is an independent project, not affiliated with or endorsed by AFNOR, any
-standards body, any manufacturer of air terminals, Google, Esri or OpenStreetMap. Trademarks belong
+standards body, any manufacturer of air terminals, Google, Esri, Autodesk or OpenStreetMap. Trademarks belong
 to their owners. Map services are used with the user's own account and key, under the provider's
 terms and at the user's cost.

@@ -35,15 +35,20 @@
   "bundle": {
     "active": true,
     "targets": [
-      "nsis",
       "msi"
     ],
     "publisher": "Bugra Gungoz",
+    "windows": {
+      "wix": {
+        "fragmentPaths": ["wix/nsis-kalintisi.wxs"],
+        "componentRefs": ["NsisKalintisiTemizle"]
+      }
+    },
     "fileAssociations": [
       {
         "ext": ["ptproj"],
         "name": "Paratoner projesi",
-        "description": "Paratoner Risk Analizi proje dosyası",
+        "description": "Paratoner Risk Analizi projesi",
         "role": "Editor",
         "mimeType": "application/x-paratoner-proje"
       }

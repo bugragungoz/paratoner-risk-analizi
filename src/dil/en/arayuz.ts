@@ -617,7 +617,7 @@ export const arayuzEn: ArayuzMetinleri = {
       {
         baslik: 'Third parties',
         metin:
-          'This is an independent project; it is not affiliated with or endorsed by AFNOR, any standards body, any air terminal manufacturer, Google, Esri or OpenStreetMap. The trademarks mentioned belong to their owners. Map services are used with the user\'s own account and key under the provider\'s terms; any fees and obligations are the user\'s.',
+          'This is an independent project; it is not affiliated with or endorsed by AFNOR, any standards body, any air terminal manufacturer, Google, Esri, Autodesk or OpenStreetMap. The trademarks mentioned belong to their owners. Map services are used with the user\'s own account and key under the provider\'s terms; any fees and obligations are the user\'s.',
       },
       {
         baslik: 'Acceptance',

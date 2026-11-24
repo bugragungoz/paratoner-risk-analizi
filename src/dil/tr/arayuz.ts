@@ -620,7 +620,7 @@ export const arayuzTr = {
       {
         baslik: 'Üçüncü taraflar',
         metin:
-          'Bu bağımsız bir projedir; AFNOR, herhangi bir standart kuruluşu, paratoner üreticisi, Google, Esri ya da OpenStreetMap ile bağlantısı yoktur ve onlar tarafından onaylanmamıştır. Adı geçen markalar sahiplerine aittir. Harita servisleri kullanıcının kendi hesabı ve anahtarıyla, sağlayıcının koşullarına göre kullanılır; doğan ücret ve yükümlülükler kullanıcıya aittir.',
+          'Bu bağımsız bir projedir; AFNOR, herhangi bir standart kuruluşu, paratoner üreticisi, Google, Esri, Autodesk ya da OpenStreetMap ile bağlantısı yoktur ve onlar tarafından onaylanmamıştır. Adı geçen markalar sahiplerine aittir. Harita servisleri kullanıcının kendi hesabı ve anahtarıyla, sağlayıcının koşullarına göre kullanılır; doğan ücret ve yükümlülükler kullanıcıya aittir.',
       },
       {
         baslik: 'Kabul',
