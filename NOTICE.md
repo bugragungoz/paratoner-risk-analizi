@@ -4,8 +4,9 @@ Paratoner Risk Analizi
 Copyright (C) 2026 Buğra Güngöz
 
 Bu dosya programın telif bildirimini, lisansın özetini, GNU GPL sürüm 3 madde 7 uyarınca eklenen
-koşulları, sorumluluk reddini ve üçüncü taraf bildirimlerini içerir. Lisansın bağlayıcı metni
-[LICENSE](LICENSE) dosyasıdır; bu dosyadaki özet onun yerine geçmez.
+koşulları ve izni, sorumluluk reddini ve üçüncü taraf bildirimlerini içerir. Lisansın bağlayıcı metni
+[LICENSE](LICENSE) dosyasıdır; bu dosyadaki özet onun yerine geçmez. Aynı depodaki Android saha
+uygulaması Keşif (`saha/` klasörü) programın parçasıdır ve aynı koşullara tabidir.
 
 ## 1. Telif ve yazarlık
 
@@ -29,7 +30,7 @@ Programı yalnızca kullanmak (hesap yapmak, rapor üretmek) hiçbir koşula ba�
 koşullar programı dağıtanlar ve değiştirip dağıtanlar içindir. Programla üretilen proje dosyaları ve
 raporlar kullanıcıya aittir; lisans onları kapsamaz.
 
-## 3. Ek koşullar (GNU GPL sürüm 3, madde 7)
+## 3. Ek koşullar ve ek izin (GNU GPL sürüm 3, madde 7)
 
 Lisansın 7. maddesinin (b), (c) ve (e) bentleri uyarınca:
 
@@ -41,6 +42,15 @@ Lisansın 7. maddesinin (b), (c) ve (e) bentleri uyarınca:
 3. **Ad ve logo.** Bu lisans, "Paratoner Risk Analizi" adı ve program logosu üzerinde marka hukuku
    bakımından bir hak vermez. Ad ve logo, özgün programa atıf yapmak için kullanılabilir;
    değiştirilmiş bir sürümü tanıtmak için kullanılamaz.
+
+**Ek izin (Google Play hizmetleri).** Keşif'in Android sürümü konumu Google Play hizmetleri istemci
+kitaplıklarıyla (`com.google.android.gms`) alır. Bu kitaplıklar açık kaynak değildir; Google'ın
+Android Yazılım Geliştirme Kiti Lisansı ile dağıtılır. Lisansın 7. maddesi uyarınca: bu programı ya
+da kapsanan herhangi bir çalışmayı bu kitaplıklarla (ya da onların değiştirilmiş bir sürümüyle)
+bağlayarak veya birleştirerek değiştirirseniz, programın lisans verenleri ortaya çıkan çalışmayı
+iletmeniz için size ek izin verir. Böyle bir birleşimin Karşılık Gelen Kaynağı bu kitaplıkların
+kaynak kodunu içermek zorunda değildir. İzin yalnızca bu kitaplıklar içindir; programın geri kalanı
+lisansın bütün koşullarına tabidir.
 
 ## 4. Garanti ve sorumluluk reddi
 
@@ -77,8 +87,9 @@ Lisansın 7. maddesinin (b), (c) ve (e) bentleri uyarınca:
   Google'ın markasıdır ve atıf kuralları gereği gösterilir.
 - **Açık kaynak bileşenler.** Program; Tauri, React, Leaflet, Turf, docx, pdfmake ve başka açık
   kaynak bileşenlerle derlenir. Hepsi GPL-3.0 ile bağdaşan lisanslar altındadır (MIT, Apache-2.0,
-  BSD, ISC, MPL-2.0, SIL OFL 1.1 ve benzerleri). Bileşenlerin ve lisanslarının tam listesi:
-  [docs/UCUNCU_TARAF_LISANSLARI.md](docs/UCUNCU_TARAF_LISANSLARI.md).
+  BSD, ISC, MPL-2.0, SIL OFL 1.1 ve benzerleri). Tek ayrık durum Keşif'in Android sürümündeki
+  Google Play hizmetleri kitaplıklarıdır (madde 3, ek izin). Bileşenlerin ve lisanslarının tam
+  listesi: [docs/UCUNCU_TARAF_LISANSLARI.md](docs/UCUNCU_TARAF_LISANSLARI.md).
 
 ---
 
@@ -96,6 +107,16 @@ source files must be preserved in modified versions and in the legal notices the
 be presented as the original or as published by its author; (3) no rights are granted under
 trademark law to the name "Paratoner Risk Analizi" or the program logo beyond referring to the
 original program.
+
+The Android field app Keşif (`saha/` folder) is part of the program and is covered by the same terms.
+
+**Additional permission under GNU GPL version 3, section 7 (Google Play services):** If you modify
+this program, or any covered work, by linking or combining it with the Google Play services client
+libraries (`com.google.android.gms`, distributed by Google under the Android Software Development Kit
+License), or a modified version of those libraries, the licensors of this program grant you
+additional permission to convey the resulting work. Corresponding Source for a non-source form of
+such a combination need not include the source code of those libraries. This permission applies
+only to those libraries; the rest of the program remains subject to all terms of the license.
 
 **No warranty, no liability.** The program is provided "as is", without warranty of any kind,
 including accuracy, fitness for a particular purpose or conformity with any standard or regulation.

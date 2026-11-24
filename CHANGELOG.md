@@ -3,7 +3,9 @@
 Biçim [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) düzenindedir; sürümler
 [anlamsal sürümleme](https://semver.org/lang/tr/) kullanır.
 
-## Yayımlanmamış
+## 1.10.0 (2026-11-24)
+
+Keşif 1.0.0 ilk kez bu sürümle yayımlanır.
 
 ### Eklendi
 

@@ -14,8 +14,23 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// Yayın imzası: anahtar deponun dışında durur; yolu, takma adı ve parolası depoya girmeyen
+// gen/android/keystore.properties dosyasındadır. Dosya yoksa yayın APK'sı imzasız çıkar.
+val imzaAyarlari = rootProject.file("keystore.properties")
+
 android {
     compileSdk = 36
+    signingConfigs {
+        if (imzaAyarlari.exists()) {
+            create("release") {
+                val p = Properties().apply { imzaAyarlari.inputStream().use { load(it) } }
+                storeFile = file(p.getProperty("storeFile"))
+                storePassword = p.getProperty("password")
+                keyAlias = p.getProperty("keyAlias")
+                keyPassword = p.getProperty("password")
+            }
+        }
+    }
     namespace = "com.bugragungoz.paratoner.saha"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
@@ -38,6 +53,7 @@ android {
             }
         }
         getByName("release") {
+            if (imzaAyarlari.exists()) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

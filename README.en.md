@@ -4,18 +4,19 @@
 
 [![CI](https://github.com/bugragungoz/paratoner-risk-analizi/actions/workflows/ci.yml/badge.svg)](https://github.com/bugragungoz/paratoner-risk-analizi/actions/workflows/ci.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-3ddc84)](LICENSE)
-![Platform: Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-131110)
+![Platform: Windows and Android](https://img.shields.io/badge/platform-Windows%2010%2F11%20%C2%B7%20Android-131110)
 
 A Windows desktop app for electrical engineers who design lightning protection with early streamer
 emission (ESE) air terminals. You draw the site on a map; the app runs an NF C 17-102 based risk
 assessment, finds the required protection level of every structure, checks with each terminal's
-protection radius whether the whole structure is covered, and writes a Word or PDF report.
+protection radius whether the whole structure is covered, and writes a Word or PDF report. The
+interface and reports are in English or Turkish. On site, the Android app Keşif records ground
+levels and air terminal positions, which are imported into the desktop app as KML.
 
-The interface and reports are in Turkish.
-
-**[Download the latest release](https://github.com/bugragungoz/paratoner-risk-analizi/releases/latest)** (Windows 10/11, 64-bit).
-The installer is not code-signed; if Windows SmartScreen shows a warning, continue with "More info"
-and "Run anyway".
+**[Download the latest release](https://github.com/bugragungoz/paratoner-risk-analizi/releases/latest)**: MSI installer for
+Windows 10/11 (64-bit), Keşif APK for Android 7 and later (64-bit). The installer is not code-signed; if
+Windows SmartScreen shows a warning, continue with "More info" and "Run anyway". The APK is
+installed outside Google Play, so the phone asks for permission to install unknown apps.
 
 [Türkçe](README.md) · [Changelog (TR)](CHANGELOG.md) · [Security](SECURITY.md) · [License and notices](NOTICE.md)
 
@@ -37,8 +38,14 @@ and "Run anyway".
   the substituted values and the result, so it can be checked by hand.
 - **Report.** Word and PDF: input tables, method and assumptions, per-structure assessment, scaled
   map figure.
-- **Maps.** Google and Esri satellite imagery with the user's own key, OpenStreetMap without one.
-  Official services only.
+- **Maps.** Google and Esri satellite imagery with the user's own key, OpenStreetMap without one;
+  official services only. A site plan opens as a DXF underlay; with TUREF coordinates it falls
+  into place, otherwise it is aligned with two points.
+- **Export and import.** Google Earth (KML / KMZ) and AutoCAD DXF (TUREF / TM or local
+  coordinates), with results and protection circles on separate layers. Structures and air
+  terminals are read from KML.
+- **Field app.** The Android app Keşif records ground levels and air terminal points on site with
+  their position accuracy; a survey is shared as KML and imported into the desktop app.
 
 With missing or non-standard input the app does not calculate and says so.
 
@@ -75,8 +82,12 @@ With missing or non-standard input the app does not calculate and says so.
   terminal tip must be at least 2 m and at most 60 m above the surface it protects; a terminal
   outside this range never counts as protecting the structure.
 - **Geometry.** A structure is treated as a flat-roofed prism; antennas, chimneys and similar items
-  must be included in the structure height. The check is in plan view; taller obstacles between a
-  terminal and a structure are ignored.
+  must be included in the structure height. The check is in plan view (GRS80 ellipsoid, local
+  Transverse Mercator plane of the structure); taller obstacles between a terminal and a structure
+  are ignored.
+- **Field positions.** A phone position can be off by a few metres in the open and by more inside
+  or next to buildings; the accuracy (±m) of every point is kept in the file. Air terminal
+  positions from Keşif should be checked on the map.
 - **Not covered.** Down conductors, earthing, separation distance, equipotential bonding and surge
   protective device selection.
 
@@ -96,7 +107,7 @@ interface and source code, is the original work of its author and is published u
   decision based on them. To the maximum extent permitted by applicable law, the author accepts no
   liability.
 - **Third parties.** This is an independent project, not affiliated with AFNOR, any manufacturer of
-  air terminals, Google, Esri or OpenStreetMap. It does not contain the text of NF C 17-102. Map
+  air terminals, Google, Esri, Autodesk or OpenStreetMap. It does not contain the text of NF C 17-102. Map
   services are used with the user's own key, under the provider's terms.
 
 By using the program you accept these terms. Full text: [NOTICE.md](NOTICE.md) ·

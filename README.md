@@ -4,16 +4,19 @@
 
 [![CI](https://github.com/bugragungoz/paratoner-risk-analizi/actions/workflows/ci.yml/badge.svg)](https://github.com/bugragungoz/paratoner-risk-analizi/actions/workflows/ci.yml)
 [![Lisans: GPL-3.0-or-later](https://img.shields.io/badge/lisans-GPL--3.0--or--later-3ddc84)](LICENSE)
-![Platform: Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-131110)
+![Platform: Windows ve Android](https://img.shields.io/badge/platform-Windows%2010%2F11%20%C2%B7%20Android-131110)
 
 Aktif (ESE) paratonerli yıldırımdan korunma projesi hazırlayan elektrik mühendisleri için Windows
 masaüstü uygulaması. Tesisi harita üzerinde çizersiniz; program NF C 17-102 esaslı risk analizini
 yapar, her yapının gerekli koruma seviyesini bulur, paratonerlerin koruma yarıçapıyla yapının
-tamamen korunup korunmadığını denetler ve Word ya da PDF raporu hazırlar.
+tamamen korunup korunmadığını denetler ve Word ya da PDF raporu hazırlar. Arayüz ve rapor Türkçe
+ya da İngilizcedir. Sahada Android uygulaması Keşif ile kot seviyeleri ve paratoner konumları
+toplanır, programa KML olarak aktarılır.
 
-**[Son sürümü indir](https://github.com/bugragungoz/paratoner-risk-analizi/releases/latest)** (Windows 10/11, 64 bit).
-Kurulum dosyası imzalı değildir; Windows SmartScreen uyarı gösterirse "Ek bilgi" ve "Yine de
-çalıştır" ile devam edilir.
+**[Son sürümü indir](https://github.com/bugragungoz/paratoner-risk-analizi/releases/latest)**: Windows 10/11 (64 bit) için MSI
+kurulum paketi, Android 7 ve üstü (64 bit) için Keşif APK'sı. Kurulum paketi kod imzalı değildir; Windows
+SmartScreen uyarı gösterirse "Ek bilgi" ve "Yine de çalıştır" ile devam edilir. APK Google Play
+dışından kurulduğu için telefon bilinmeyen uygulamaları yükleme izni ister.
 
 [English](README.en.md) · [Değişiklik günlüğü](CHANGELOG.md) · [Güvenlik](SECURITY.md) · [Lisans ve bildirimler](NOTICE.md)
 
@@ -35,7 +38,12 @@ Kurulum dosyası imzalı değildir; Windows SmartScreen uyarı gösterirse "Ek b
 - **Rapor.** Word ve PDF: girdi tabloları, yöntem ve varsayımlar, yapı bazlı değerlendirme, ölçekli
   harita şekli.
 - **Harita.** Google ve Esri uydu görüntüsü kullanıcının kendi anahtarıyla, anahtar yoksa
-  OpenStreetMap. Yalnızca resmi servisler kullanılır.
+  OpenStreetMap; yalnızca resmi servisler. Vaziyet planı DXF altlık olarak açılır; TUREF
+  koordinatlıysa yerine oturur, değilse iki noktayla hizalanır.
+- **Dışa ve içe aktarma.** Google Earth (KML / KMZ) ve AutoCAD DXF (TUREF / TM ya da yerel
+  koordinat); sonuçlar ve koruma daireleri ayrı katmanlarda. KML'den yapı ve paratoner alınır.
+- **Saha uygulaması.** Android uygulaması Keşif sahada kot seviyelerini ve paratoner noktalarını
+  konum doğruluğuyla kaydeder; keşif KML olarak paylaşılır ve programa aktarılır.
 
 Girdi eksik ya da standart dışıysa program hesap yapmaz ve "hesaplanamadı" der.
 
@@ -72,8 +80,11 @@ Girdi eksik ya da standart dışıysa program hesap yapmaz ve "hesaplanamadı" d
   ucu, koruduğu yüzeyden en az 2 m, en çok 60 m yüksekte olmalıdır; aralık dışındaki paratoner o
   yapıyı korumuş sayılmaz.
 - **Geometri.** Yapı düz çatılı prizma kabul edilir; anten, baca gibi çıkıntılar yapı yüksekliğine
-  dahil edilmelidir. Kontrol plan düzlemindedir; paratoner ile yapı arasındaki daha yüksek
-  engeller hesaba katılmaz.
+  dahil edilmelidir. Kontrol plan düzlemindedir (GRS80 elipsoidi, yapının yerel Transverse
+  Mercator düzlemi); paratoner ile yapı arasındaki daha yüksek engeller hesaba katılmaz.
+- **Saha konumu.** Telefon konumu açık havada birkaç metre, bina içinde ve yanında daha büyük hata
+  verebilir; her noktanın doğruluğu (±m) dosyada saklanır. Keşif'ten gelen paratoner yerleri
+  haritada kontrol edilmelidir.
 - **Kapsam dışı.** İniş iletkenleri, topraklama, ayırma mesafesi, eş potansiyel bağlama ve parafudr
   seçimi.
 
@@ -91,8 +102,8 @@ yayımlanır.
   yardımcısıdır; mühendislik hizmeti, proje onayı ya da uygunluk belgesi değildir. Sonuçlardan,
   rapordan ve bunlara dayanan kararlardan kullanıcı ve projeyi imzalayan mühendis sorumludur.
   Yazar, yürürlükteki hukukun izin verdiği en geniş ölçüde hiçbir sorumluluk kabul etmez.
-- **Üçüncü taraflar.** Bağımsız bir projedir; AFNOR, paratoner üreticileri, Google, Esri ya da
-  OpenStreetMap ile bağlantısı yoktur. NF C 17-102 metnini içermez. Harita servisleri kullanıcının
+- **Üçüncü taraflar.** Bağımsız bir projedir; AFNOR, paratoner üreticileri, Google, Esri,
+  Autodesk ya da OpenStreetMap ile bağlantısı yoktur. NF C 17-102 metnini içermez. Harita servisleri kullanıcının
   kendi anahtarıyla ve sağlayıcının koşullarına göre kullanılır.
 
 Programı kullanmak bu koşulları kabul etmek anlamına gelir. Tam metin: [NOTICE.md](NOTICE.md) ·

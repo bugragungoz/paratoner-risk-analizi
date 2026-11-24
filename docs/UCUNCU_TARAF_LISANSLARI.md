@@ -14,7 +14,8 @@ Notlar:
 - Yazı tipleri (Geist, JetBrains Mono, Carlito) SIL Open Font License 1.1 altındadır.
 - Google Play hizmetleri kitaplıkları (`com.google.android.gms`) açık kaynak değildir; yalnızca
   Keşif'in Android sürümünde, telefonun konum hizmetine erişmek için bulunur ve Google'ın Android
-  SDK koşullarıyla dağıtılır. Masaüstü programında yer almaz.
+  SDK koşullarıyla dağıtılır. Masaüstü programında yer almaz. Bu birleşim için programın lisansı GPL
+  madde 7 kapsamında ek izin verir ([NOTICE.md](../NOTICE.md), madde 3).
 - Bunlar dışındaki bütün bileşenler GPL-3.0-or-later ile bağdaşır.
 
 ## JavaScript bileşenleri (251)
